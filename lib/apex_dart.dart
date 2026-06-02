@@ -14,6 +14,7 @@ export 'src/charts/radar_chart.dart';
 export 'src/charts/radial_bar_chart.dart';
 export 'src/charts/range_bar_chart.dart';
 export 'src/charts/scatter_chart.dart';
+export 'src/charts/treemap_chart.dart';
 export 'src/interaction/chart_hit.dart';
 export 'src/interaction/zoom_toolbar.dart';
 export 'src/modules/annotation_renderer.dart';

@@ -10,6 +10,7 @@ import 'charts/radar_chart.dart';
 import 'charts/radial_bar_chart.dart';
 import 'charts/range_bar_chart.dart';
 import 'charts/scatter_chart.dart';
+import 'charts/treemap_chart.dart';
 import 'interaction/cartesian_hit_tester.dart';
 import 'interaction/chart_hit.dart';
 import 'interaction/hover_painter.dart';
@@ -523,6 +524,8 @@ class _ApexChartPainter extends CustomPainter {
         _paintRadar(canvas, size);
       case ApexChartType.heatmap:
         _paintHeatMap(canvas, size);
+      case ApexChartType.treemap:
+        _paintTreemap(canvas, size);
     }
   }
 
@@ -530,6 +533,11 @@ class _ApexChartPainter extends CustomPainter {
     onLayout(null, size);
     HeatMapChartRenderer.paint(canvas, size, options);
     LegendRenderer.paint(canvas, size, options);
+  }
+
+  void _paintTreemap(Canvas canvas, Size size) {
+    onLayout(null, size);
+    TreemapChartRenderer.paint(canvas, size, options);
   }
 
   void _paintRadar(Canvas canvas, Size size) {

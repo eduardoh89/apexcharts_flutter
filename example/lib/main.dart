@@ -282,6 +282,24 @@ class GalleryPage extends StatelessWidget {
           ],
           'xaxis': {'type': 'datetime'},
         }),
+        ChartSpec('Treemap', {
+          'chart': {'type': 'treemap'},
+          'legend': {'show': false},
+          'colors': ['#008FFB'],
+          'dataLabels': {'enabled': true},
+          'series': [
+            {
+              'name': 'Desktops',
+              'data': [
+                {'x': 'India', 'y': 218}, {'x': 'USA', 'y': 149},
+                {'x': 'China', 'y': 184}, {'x': 'Japan', 'y': 55},
+                {'x': 'Germany', 'y': 84}, {'x': 'Brazil', 'y': 31},
+                {'x': 'France', 'y': 70}, {'x': 'Canada', 'y': 30},
+                {'x': 'Italy', 'y': 44}, {'x': 'Spain', 'y': 68},
+              ],
+            }
+          ],
+        }),
         ChartSpec('Pie', {
           'chart': {'type': 'pie'},
           'colors': ['#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0'],

@@ -15,7 +15,8 @@ enum ApexChartType {
   candlestick,
   radar,
   radialBar,
-  heatmap;
+  heatmap,
+  treemap;
 
   static ApexChartType parse(String? v) {
     switch (v) {
@@ -27,6 +28,8 @@ enum ApexChartType {
         return ApexChartType.rangeBar;
       case 'candlestick':
         return ApexChartType.candlestick;
+      case 'treemap':
+        return ApexChartType.treemap;
       case 'radar':
         return ApexChartType.radar;
       case 'pie':
@@ -287,6 +290,33 @@ class ApexCandlestickOptions {
     return ApexCandlestickOptions(
       upwardColor: col(colors?['upward']),
       downwardColor: col(colors?['downward']),
+    );
+  }
+}
+
+/// Treemap plot options, ported from ApexCharts `settings/Options.js`
+/// `plotOptions.treemap` (enableShades:true, shadeIntensity:0.5,
+/// distributed:false, borderRadius:4).
+class ApexTreemapOptions {
+  const ApexTreemapOptions({
+    this.enableShades = true,
+    this.shadeIntensity = 0.5,
+    this.distributed = false,
+    this.borderRadius = 4,
+  });
+
+  final bool enableShades;
+  final double shadeIntensity;
+  final bool distributed;
+  final double borderRadius;
+
+  static ApexTreemapOptions parse(Map<String, dynamic>? t) {
+    if (t == null) return const ApexTreemapOptions();
+    return ApexTreemapOptions(
+      enableShades: t['enableShades'] as bool? ?? true,
+      shadeIntensity: (t['shadeIntensity'] as num?)?.toDouble() ?? 0.5,
+      distributed: t['distributed'] as bool? ?? false,
+      borderRadius: (t['borderRadius'] as num?)?.toDouble() ?? 4,
     );
   }
 }
@@ -622,6 +652,7 @@ class ApexOptions {
     this.radialBar = const ApexRadialBarOptions(),
     this.heatmap = const ApexHeatmapOptions(),
     this.candlestick = const ApexCandlestickOptions(),
+    this.treemap = const ApexTreemapOptions(),
     this.labels = const [],
     this.pieSeries = const [],
     this.stacked = false,
@@ -715,6 +746,7 @@ class ApexOptions {
   final ApexRadialBarOptions radialBar;
   final ApexHeatmapOptions heatmap;
   final ApexCandlestickOptions candlestick;
+  final ApexTreemapOptions treemap;
 
   /// Parse a raw ApexCharts `options` map (the subset apex_dart supports).
   factory ApexOptions.fromJson(Map<String, dynamic> json) {
@@ -766,6 +798,9 @@ class ApexOptions {
     );
     final candlestick = ApexCandlestickOptions.parse(
       plotOptions?['candlestick'] as Map<String, dynamic>?,
+    );
+    final treemap = ApexTreemapOptions.parse(
+      plotOptions?['treemap'] as Map<String, dynamic>?,
     );
 
     final legend = ApexLegend.parse(json['legend'] as Map<String, dynamic>?);
@@ -852,6 +887,7 @@ class ApexOptions {
       radialBar: radialBar,
       heatmap: heatmap,
       candlestick: candlestick,
+      treemap: treemap,
       stacked: stacked,
       markers: markers,
       yFormat: yFormat,
@@ -895,6 +931,7 @@ class ApexOptions {
       radialBar: radialBar,
       heatmap: heatmap,
       candlestick: candlestick,
+      treemap: treemap,
       stacked: stacked,
       markers: markers,
       yFormat: yFormat,

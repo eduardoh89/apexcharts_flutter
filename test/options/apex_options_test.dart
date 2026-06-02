@@ -85,6 +85,22 @@ void main() {
     });
   });
 
+  group('ApexOptions.fromJson — treemap', () {
+    test('treemap_basic parses { x, y } tiles + plotOptions.treemap', () {
+      final o = ApexOptions.fromJson(_fixtureOptions('treemap_basic'));
+      expect(o.type, ApexChartType.treemap);
+      expect(o.series.first.points.length, 10);
+      expect(o.series.first.points.first.label, 'India');
+      expect(o.series.first.points.first.y, 218);
+      // treemap defaults (Options.js): enableShades true, shadeIntensity 0.5,
+      // distributed false, borderRadius 4.
+      expect(o.treemap.enableShades, isTrue);
+      expect(o.treemap.shadeIntensity, closeTo(0.5, 1e-9));
+      expect(o.treemap.distributed, isFalse);
+      expect(o.treemap.borderRadius, 4);
+    });
+  });
+
   group('ApexOptions.fromJson — candlestick', () {
     test('candlestick_basic parses { x, y:[o,h,l,c] } OHLC points', () {
       final o = ApexOptions.fromJson(_fixtureOptions('candlestick_basic'));
