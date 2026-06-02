@@ -42,7 +42,13 @@ perceptual tolerance.
 | 2 | Foundation: utils, scales, axes, svg, options | ✅ |
 | 3 | Line chart end-to-end (line/area, straight/smooth/step) | ✅ |
 | 4 | Bar (grouped) + Pie/Donut | ✅ |
-| 5 | area / scatter / stacked / radial / heatmap | ⬜ |
+| 5 | area / scatter / stacked / horizontal + zoom/pan + tooltips | ✅ |
+| 5b | bubble, rangeBar/timeline, logarithmic axis | ✅ |
+| 6 | radialBar/gauge, radar | ✅ |
+| 7 | heatmap, candlestick/OHLC, treemap | ✅ |
+
+Remaining backlog: multiple y-axes, tooltip dark theme + `intersect`,
+distributed (per-bar/tile) colors, stacked-total labels.
 
 Line charts diff **~7–12%** against the ApexCharts reference; bar/pie/donut
 **~25–37%** (higher because solid-fill edges double-count any sub-pixel offset
