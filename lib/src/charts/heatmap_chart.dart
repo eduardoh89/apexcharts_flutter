@@ -18,6 +18,27 @@ import '../utils/apex_color.dart';
 ///   * color = shadeColor(colorShadePercent, paletteColor[rowIndex])
 ///     (positive shade lightens toward white) at `fill.opacity` (default 1).
 /// So high values stay near the full palette color; low values fade to white.
+/// A single laid-out heatmap cell, shared by the renderer and the hit-tester.
+class HeatMapCell {
+  const HeatMapCell({
+    required this.rect,
+    required this.color,
+    required this.seriesIndex,
+    required this.dataPointIndex,
+    required this.seriesName,
+    required this.label,
+    required this.value,
+  });
+
+  final Rect rect;
+  final Color color;
+  final int seriesIndex;
+  final int dataPointIndex;
+  final String seriesName;
+  final String label;
+  final double value;
+}
+
 class HeatMapChartRenderer {
   const HeatMapChartRenderer._();
 
@@ -26,14 +47,16 @@ class HeatMapChartRenderer {
   static const double _topPadding = 10;
   static const double _rightPadding = 12;
 
-  static void paint(Canvas canvas, Size size, ApexOptions options) {
+  /// Computes the laid-out cells (geometry + color + data) for [options] within
+  /// [size]. Shared by [paint] and the hit-tester so both agree exactly.
+  static List<HeatMapCell> cells(Size size, ApexOptions options) {
     final series = options.series;
-    if (series.isEmpty) return;
+    if (series.isEmpty) return const [];
     int dataPoints = 0;
     for (final s in series) {
       dataPoints = math.max(dataPoints, s.points.length);
     }
-    if (dataPoints == 0) return;
+    if (dataPoints == 0) return const [];
 
     // Global min/max across all cells (non-distributed default).
     double minY = double.infinity, maxY = -double.infinity;
@@ -51,13 +74,10 @@ class HeatMapChartRenderer {
     final double total = (maxY.abs() + minY.abs()) == 0
         ? -0.000001
         : maxY.abs() + minY.abs();
-
     final double shadeIntensity = options.heatmap.shadeIntensity;
     final bool hasNegs = minY < 0;
 
-    // Reserve gutters: left for row (series) labels, bottom for category labels.
     final labeller = TextDrawer(
-      color: const Color(0xFF6E8192),
       fontSize: 11,
       fontFamily: options.fontFamily,
     );
@@ -73,68 +93,105 @@ class HeatMapChartRenderer {
       size.width - _rightPadding,
       size.height - _bottomGutter,
     );
-    if (plot.width <= 0 || plot.height <= 0) return;
+    if (plot.width <= 0 || plot.height <= 0) return const [];
 
     final double xDivision = plot.width / dataPoints;
     final double yDivision = plot.height / series.length;
-    final double radius = options.heatmap.radius;
 
+    final out = <HeatMapCell>[];
+    for (int i = 0; i < series.length; i++) {
+      final s = series[i];
+      final int rowFromTop = series.length - 1 - i;
+      final double y1 = plot.top + rowFromTop * yDivision;
+      final baseColor = s.color ?? options.colors[i % options.colors.length];
+      for (int j = 0; j < dataPoints; j++) {
+        if (j >= s.points.length) continue;
+        final p = s.points[j];
+        if (p.isNull) continue;
+        final double x1 = plot.left + j * xDivision;
+        final double percent = 100 * p.y / total;
+        final Color cellColor = options.heatmap.enableShades
+            ? _shadeFor(baseColor, percent, hasNegs, shadeIntensity)
+            : baseColor;
+        final String label = p.label ??
+            (j < options.categories.length ? options.categories[j] : '');
+        out.add(HeatMapCell(
+          rect: Rect.fromLTWH(x1, y1, xDivision, yDivision),
+          color: cellColor,
+          seriesIndex: i,
+          dataPointIndex: j,
+          seriesName: s.name,
+          label: label,
+          value: p.y,
+        ));
+      }
+    }
+    return out;
+  }
+
+  static void paint(Canvas canvas, Size size, ApexOptions options) {
+    final series = options.series;
+    if (series.isEmpty) return;
+    int dataPoints = 0;
+    for (final s in series) {
+      dataPoints = math.max(dataPoints, s.points.length);
+    }
+    if (dataPoints == 0) return;
+
+    final laid = cells(size, options);
+    if (laid.isEmpty) return;
+
+    final double radius = options.heatmap.radius;
     final strokePaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
       ..color = const Color(0xFFFFFFFF);
 
+    final labeller = TextDrawer(
+      color: const Color(0xFF6E8192),
+      fontSize: 11,
+      fontFamily: options.fontFamily,
+    );
     final dataLabeller = TextDrawer(
       color: const Color(0xFFFFFFFF),
       fontSize: 11,
       fontFamily: options.fontFamily,
     );
 
-    for (int i = 0; i < series.length; i++) {
-      final s = series[i];
-      // series[0] at the bottom: row from the top is (seriesLen-1 - i).
-      final int rowFromTop = series.length - 1 - i;
-      final double y1 = plot.top + rowFromTop * yDivision;
-      final baseColor = s.color ?? options.colors[i % options.colors.length];
-
-      for (int j = 0; j < dataPoints; j++) {
-        if (j >= s.points.length) continue;
-        final p = s.points[j];
-        if (p.isNull) continue;
-        final double x1 = plot.left + j * xDivision;
-
-        final double percent = 100 * p.y / total;
-        final Color cellColor = options.heatmap.enableShades
-            ? _shadeFor(baseColor, percent, hasNegs, shadeIntensity)
-            : baseColor;
-
-        final rect = Rect.fromLTWH(x1, y1, xDivision, yDivision);
-        final rrect = RRect.fromRectAndRadius(rect, Radius.circular(radius));
-        canvas.drawRRect(rrect, Paint()..color = cellColor..isAntiAlias = true);
-        canvas.drawRRect(rrect, strokePaint);
-
-        if (options.dataLabelsEnabled) {
-          dataLabeller.draw(
-            canvas,
-            _fmtNum(p.y),
-            Offset(x1 + xDivision / 2, y1 + yDivision / 2),
-            anchor: TextAnchor.middle,
-            verticalCenter: true,
-          );
-        }
+    Rect? plot;
+    for (final cell in laid) {
+      plot = plot == null ? cell.rect : plot.expandToInclude(cell.rect);
+      final rrect = RRect.fromRectAndRadius(cell.rect, Radius.circular(radius));
+      canvas.drawRRect(rrect, Paint()..color = cell.color..isAntiAlias = true);
+      canvas.drawRRect(rrect, strokePaint);
+      if (options.dataLabelsEnabled) {
+        dataLabeller.draw(
+          canvas,
+          _fmtNum(cell.value),
+          cell.rect.center,
+          anchor: TextAnchor.middle,
+          verticalCenter: true,
+        );
       }
+    }
+    if (plot == null) return;
 
-      // Row label (series name) at the left, vertically centered on the row.
+    // Row labels (series name) at the left, vertically centered on each row.
+    final double yDivision = plot.height / series.length;
+    for (int i = 0; i < series.length; i++) {
+      final int rowFromTop = series.length - 1 - i;
+      final double cy = plot.top + (rowFromTop + 0.5) * yDivision;
       labeller.draw(
         canvas,
-        s.name,
-        Offset(plot.left - 10, y1 + yDivision / 2),
+        series[i].name,
+        Offset(plot.left - 10, cy),
         anchor: TextAnchor.end,
         verticalCenter: true,
       );
     }
 
     // Category (x) labels along the bottom, centered under each column.
+    final double xDivision = plot.width / dataPoints;
     final double labelY = plot.bottom + 8;
     for (int j = 0; j < dataPoints; j++) {
       final lbl = j < options.categories.length ? options.categories[j] : '';

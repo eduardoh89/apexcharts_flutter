@@ -13,30 +13,43 @@ import '../utils/apex_color.dart';
 /// Each data point `{ x: label, y: value }` becomes a rectangle sized by value;
 /// the squarify algorithm packs them into near-square tiles. Cell color shades
 /// the palette color by the value percentile (treemap uses shadeIntensity*1.25).
+/// A single laid-out treemap tile, shared by the renderer and the hit-tester.
+class TreemapTile {
+  const TreemapTile({
+    required this.rect,
+    required this.color,
+    required this.seriesName,
+    required this.label,
+    required this.value,
+    required this.dataPointIndex,
+  });
+
+  final Rect rect;
+  final Color color;
+  final String seriesName;
+  final String label;
+  final double value;
+  final int dataPointIndex;
+}
+
 class TreemapChartRenderer {
   const TreemapChartRenderer._();
 
   static const double _topPadding = 10;
 
-  static void paint(Canvas canvas, Size size, ApexOptions options) {
+  /// Computes the laid-out tiles (geometry + color + data) for [options] within
+  /// [size]. Shared by [paint] and the hit-tester so both agree exactly.
+  static List<TreemapTile> tiles(Size size, ApexOptions options) {
     final series = options.series;
-    if (series.isEmpty) return;
-    // ApexCharts treemap is single-series in the common case; use the first.
+    if (series.isEmpty) return const [];
     final s = series.first;
     final points = s.points.where((p) => !p.isNull).toList();
-    if (points.isEmpty) return;
+    if (points.isEmpty) return const [];
 
-    final plot = Rect.fromLTRB(
-      0,
-      _topPadding,
-      size.width,
-      size.height,
-    );
-
+    final plot = Rect.fromLTRB(0, _topPadding, size.width, size.height);
     final values = points.map((p) => p.y.abs()).toList();
     final rects = _squarify(values, plot);
 
-    // Color shade range (treemap default path of getShadeColor).
     double minY = double.infinity, maxY = -double.infinity;
     for (final p in points) {
       minY = math.min(minY, p.y);
@@ -47,31 +60,47 @@ class TreemapChartRenderer {
     final double shadeIntensity = options.treemap.shadeIntensity;
     final bool distributed = options.treemap.distributed;
 
-    final strokePaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = const Color(0xFFFFFFFF);
-
-    for (int i = 0; i < rects.length; i++) {
-      final r = rects[i];
+    final out = <TreemapTile>[];
+    for (int i = 0; i < rects.length && i < points.length; i++) {
       final p = points[i];
-      // distributed: each tile a distinct palette color; else shade one color.
       final Color base = distributed
           ? options.colors[i % options.colors.length]
           : (s.color ?? options.colors.first);
       final Color color = options.treemap.enableShades
           ? _shadeFor(base, 100 * p.y / total, shadeIntensity)
           : base;
+      out.add(TreemapTile(
+        rect: rects[i],
+        color: color,
+        seriesName: s.name,
+        label: p.label ?? '',
+        value: p.y,
+        dataPointIndex: i,
+      ));
+    }
+    return out;
+  }
 
+  static void paint(Canvas canvas, Size size, ApexOptions options) {
+    final laid = tiles(size, options);
+    if (laid.isEmpty) return;
+
+    final strokePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = const Color(0xFFFFFFFF);
+
+    for (final tile in laid) {
+      final r = tile.rect;
       final rrect = RRect.fromRectAndRadius(
         r,
         Radius.circular(options.treemap.borderRadius),
       );
-      canvas.drawRRect(rrect, Paint()..color = color..isAntiAlias = true);
+      canvas.drawRRect(rrect, Paint()..color = tile.color..isAntiAlias = true);
       canvas.drawRRect(rrect, strokePaint);
 
       // Label: tile name centered, drawn when it fits.
-      final label = p.label ?? '';
+      final label = tile.label;
       if (label.isEmpty) continue;
       final double area = r.width * r.height;
       final double fontSize =

@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:apex_dart/apex_dart.dart';
 import 'package:apex_dart/src/interaction/cartesian_hit_tester.dart';
 import 'package:apex_dart/src/interaction/pie_hit_tester.dart';
+import 'package:apex_dart/src/interaction/tile_hit_tester.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -92,6 +93,65 @@ void main() {
     test('returns null inside the donut hole', () {
       final hit = tester.hitTest(const Offset(200, 200));
       expect(hit, isNull);
+    });
+  });
+
+  group('TileHitTester (heatmap)', () {
+    const size = Size(600, 360);
+    final options = ApexOptions.fromJson({
+      'chart': {'type': 'heatmap'},
+      'colors': ['#008FFB'],
+      'series': [
+        {'name': 'W1', 'data': [
+          {'x': 'Mon', 'y': 10}, {'x': 'Tue', 'y': 40}, {'x': 'Wed', 'y': 90}
+        ]},
+        {'name': 'W2', 'data': [
+          {'x': 'Mon', 'y': 50}, {'x': 'Tue', 'y': 20}, {'x': 'Wed', 'y': 60}
+        ]},
+      ],
+      'xaxis': {'type': 'category', 'categories': ['Mon', 'Tue', 'Wed']},
+    });
+    final tester = TileHitTester(size: size, options: options);
+
+    test('detects the cell under the pointer with its value', () {
+      // Use the renderer's own cell geometry to pick a point inside a cell.
+      final cells = HeatMapChartRenderer.cells(size, options);
+      final target = cells.first;
+      final hit = tester.hitTest(target.rect.center);
+      expect(hit, isNotNull);
+      expect(hit!.rows.single.seriesName, target.seriesName);
+      expect(hit.rows.single.formattedValue,
+          target.value.toInt().toString());
+    });
+
+    test('returns null outside every cell', () {
+      final hit = tester.hitTest(const Offset(2, 2));
+      expect(hit, isNull);
+    });
+  });
+
+  group('TileHitTester (treemap)', () {
+    const size = Size(600, 360);
+    final options = ApexOptions.fromJson({
+      'chart': {'type': 'treemap'},
+      'colors': ['#008FFB'],
+      'series': [
+        {'name': 'Desktops', 'data': [
+          {'x': 'India', 'y': 218}, {'x': 'USA', 'y': 149},
+          {'x': 'China', 'y': 184}, {'x': 'Japan', 'y': 55}
+        ]},
+      ],
+    });
+    final tester = TileHitTester(size: size, options: options);
+
+    test('detects the tile under the pointer with its label + value', () {
+      final tiles = TreemapChartRenderer.tiles(size, options);
+      final target = tiles.first;
+      final hit = tester.hitTest(target.rect.center);
+      expect(hit, isNotNull);
+      expect(hit!.title, target.label);
+      expect(hit.rows.single.formattedValue,
+          target.value.toInt().toString());
     });
   });
 }

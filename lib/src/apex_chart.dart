@@ -15,6 +15,7 @@ import 'interaction/cartesian_hit_tester.dart';
 import 'interaction/chart_hit.dart';
 import 'interaction/hover_painter.dart';
 import 'interaction/pie_hit_tester.dart';
+import 'interaction/tile_hit_tester.dart';
 import 'interaction/tooltip_overlay.dart';
 import 'interaction/zoom_toolbar.dart';
 import 'modules/annotation_renderer.dart';
@@ -191,11 +192,16 @@ class _ApexChartState extends State<ApexChart>
   void _onHover(Offset local) {
     if (!widget.enableTooltip) return;
     ChartHit? hit;
+    final type = widget.options.type;
     if (_isCartesian && _lastLayout != null) {
       hit = CartesianHitTester(layout: _lastLayout!, options: widget.options)
           .hitTest(local);
-    } else if (widget.options.type.isRadial) {
+    } else if (type.isRadial) {
       hit = PieHitTester(size: _lastSize, options: widget.options)
+          .hitTest(local);
+    } else if (type == ApexChartType.heatmap ||
+        type == ApexChartType.treemap) {
+      hit = TileHitTester(size: _lastSize, options: widget.options)
           .hitTest(local);
     }
     if (hit != _hit) {
