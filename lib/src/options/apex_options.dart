@@ -262,6 +262,29 @@ class ApexRadialBarOptions {
   }
 }
 
+/// HeatMap plot options, ported from ApexCharts `settings/Options.js`
+/// `plotOptions.heatmap` (radius:2, enableShades:true, shadeIntensity:0.5).
+class ApexHeatmapOptions {
+  const ApexHeatmapOptions({
+    this.radius = 2,
+    this.enableShades = true,
+    this.shadeIntensity = 0.5,
+  });
+
+  final double radius;
+  final bool enableShades;
+  final double shadeIntensity;
+
+  static ApexHeatmapOptions parse(Map<String, dynamic>? h) {
+    if (h == null) return const ApexHeatmapOptions();
+    return ApexHeatmapOptions(
+      radius: (h['radius'] as num?)?.toDouble() ?? 2,
+      enableShades: h['enableShades'] as bool? ?? true,
+      shadeIntensity: (h['shadeIntensity'] as num?)?.toDouble() ?? 0.5,
+    );
+  }
+}
+
 /// Bubble-specific plot options, ported from ApexCharts
 /// `settings/Options.js` `plotOptions.bubble` (zScaling:true, min/max radius
 /// undefined by default).
@@ -568,6 +591,7 @@ class ApexOptions {
     this.pie = const ApexPieOptions(),
     this.bubble = const ApexBubbleOptions(),
     this.radialBar = const ApexRadialBarOptions(),
+    this.heatmap = const ApexHeatmapOptions(),
     this.labels = const [],
     this.pieSeries = const [],
     this.stacked = false,
@@ -659,6 +683,7 @@ class ApexOptions {
   final ApexPieOptions pie;
   final ApexBubbleOptions bubble;
   final ApexRadialBarOptions radialBar;
+  final ApexHeatmapOptions heatmap;
 
   /// Parse a raw ApexCharts `options` map (the subset apex_dart supports).
   factory ApexOptions.fromJson(Map<String, dynamic> json) {
@@ -704,6 +729,9 @@ class ApexOptions {
     );
     final radialBar = ApexRadialBarOptions.parse(
       plotOptions?['radialBar'] as Map<String, dynamic>?,
+    );
+    final heatmap = ApexHeatmapOptions.parse(
+      plotOptions?['heatmap'] as Map<String, dynamic>?,
     );
 
     final legend = ApexLegend.parse(json['legend'] as Map<String, dynamic>?);
@@ -788,6 +816,7 @@ class ApexOptions {
       pie: pie,
       bubble: bubble,
       radialBar: radialBar,
+      heatmap: heatmap,
       stacked: stacked,
       markers: markers,
       yFormat: yFormat,
@@ -829,6 +858,7 @@ class ApexOptions {
       pie: pie,
       bubble: bubble,
       radialBar: radialBar,
+      heatmap: heatmap,
       stacked: stacked,
       markers: markers,
       yFormat: yFormat,

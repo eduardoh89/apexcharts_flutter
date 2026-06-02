@@ -85,6 +85,22 @@ void main() {
     });
   });
 
+  group('ApexOptions.fromJson — heatmap', () {
+    test('heatmap_basic parses series rows + plotOptions.heatmap', () {
+      final o = ApexOptions.fromJson(_fixtureOptions('heatmap_basic'));
+      expect(o.type, ApexChartType.heatmap);
+      expect(o.series.length, 4);
+      expect(o.series.first.name, 'W1');
+      expect(o.series.first.points.length, 5);
+      expect(o.series.first.points.first.label, 'Mon');
+      // heatmap defaults (Options.js): radius 2, enableShades true,
+      // shadeIntensity 0.5.
+      expect(o.heatmap.radius, 2);
+      expect(o.heatmap.enableShades, isTrue);
+      expect(o.heatmap.shadeIntensity, closeTo(0.5, 1e-9));
+    });
+  });
+
   group('ApexOptions.fromJson — radar', () {
     test('radar_basic parses series + categories (axis chart)', () {
       final o = ApexOptions.fromJson(_fixtureOptions('radar_basic'));

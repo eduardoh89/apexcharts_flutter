@@ -238,6 +238,31 @@ class GalleryPage extends StatelessWidget {
           },
           'legend': {'show': false},
         }),
+        ChartSpec('HeatMap', {
+          'chart': {'type': 'heatmap'},
+          'dataLabels': {'enabled': false},
+          'colors': ['#008FFB'],
+          'series': [
+            {'name': 'W1', 'data': [
+              {'x': 'Mon', 'y': 10}, {'x': 'Tue', 'y': 40}, {'x': 'Wed', 'y': 30},
+              {'x': 'Thu', 'y': 70}, {'x': 'Fri', 'y': 90}
+            ]},
+            {'name': 'W2', 'data': [
+              {'x': 'Mon', 'y': 50}, {'x': 'Tue', 'y': 20}, {'x': 'Wed', 'y': 60},
+              {'x': 'Thu', 'y': 30}, {'x': 'Fri', 'y': 10}
+            ]},
+            {'name': 'W3', 'data': [
+              {'x': 'Mon', 'y': 80}, {'x': 'Tue', 'y': 60}, {'x': 'Wed', 'y': 20},
+              {'x': 'Thu', 'y': 40}, {'x': 'Fri', 'y': 100}
+            ]},
+            {'name': 'W4', 'data': [
+              {'x': 'Mon', 'y': 30}, {'x': 'Tue', 'y': 90}, {'x': 'Wed', 'y': 50},
+              {'x': 'Thu', 'y': 70}, {'x': 'Fri', 'y': 40}
+            ]},
+          ],
+          'xaxis': {'type': 'category', 'categories': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']},
+          'legend': {'show': false},
+        }),
         ChartSpec('Pie', {
           'chart': {'type': 'pie'},
           'colors': ['#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0'],

@@ -1,0 +1,18 @@
+{
+  "name": "heatmap_basic",
+  "width": 600,
+  "height": 360,
+  "options": {
+    "chart": { "type": "heatmap", "animations": { "enabled": false }, "toolbar": { "show": false } },
+    "dataLabels": { "enabled": false },
+    "colors": ["#008FFB"],
+    "series": [
+      { "name": "W1", "data": [{ "x": "Mon", "y": 10 }, { "x": "Tue", "y": 40 }, { "x": "Wed", "y": 30 }, { "x": "Thu", "y": 70 }, { "x": "Fri", "y": 90 }] },
+      { "name": "W2", "data": [{ "x": "Mon", "y": 50 }, { "x": "Tue", "y": 20 }, { "x": "Wed", "y": 60 }, { "x": "Thu", "y": 30 }, { "x": "Fri", "y": 10 }] },
+      { "name": "W3", "data": [{ "x": "Mon", "y": 80 }, { "x": "Tue", "y": 60 }, { "x": "Wed", "y": 20 }, { "x": "Thu", "y": 40 }, { "x": "Fri", "y": 100 }] },
+      { "name": "W4", "data": [{ "x": "Mon", "y": 30 }, { "x": "Tue", "y": 90 }, { "x": "Wed", "y": 50 }, { "x": "Thu", "y": 70 }, { "x": "Fri", "y": 40 }] }
+    ],
+    "xaxis": { "type": "category", "categories": ["Mon", "Tue", "Wed", "Thu", "Fri"] },
+    "legend": { "show": false }
+  }
+}

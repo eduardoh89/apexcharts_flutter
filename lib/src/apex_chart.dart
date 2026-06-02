@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 
 import 'charts/bar_chart.dart';
+import 'charts/heatmap_chart.dart';
 import 'charts/line_chart.dart';
 import 'charts/pie_chart.dart';
 import 'charts/radar_chart.dart';
@@ -518,9 +519,14 @@ class _ApexChartPainter extends CustomPainter {
       case ApexChartType.radar:
         _paintRadar(canvas, size);
       case ApexChartType.heatmap:
-        onLayout(null, size);
-        break;
+        _paintHeatMap(canvas, size);
     }
+  }
+
+  void _paintHeatMap(Canvas canvas, Size size) {
+    onLayout(null, size);
+    HeatMapChartRenderer.paint(canvas, size, options);
+    LegendRenderer.paint(canvas, size, options);
   }
 
   void _paintRadar(Canvas canvas, Size size) {
