@@ -17,8 +17,12 @@ class XWindow {
   double get span => max - min;
 
   XWindow clampTo(double domainMin, double domainMax) {
-    var lo = min;
-    var hi = max;
+    // A one-sided initial window (e.g. only `xaxis.min`) arrives with the open
+    // edge as ±infinity; resolve those to the domain bounds first so the
+    // edge-shifting below doesn't blow up to ±infinity (ApexCharts treats a
+    // missing min/max as the data extent).
+    var lo = min.isFinite ? min : domainMin;
+    var hi = max.isFinite ? max : domainMax;
     // Keep a minimum 1% span so the view can't collapse.
     final minSpan = (domainMax - domainMin) * 0.01;
     if (hi - lo < minSpan) {
@@ -152,6 +156,7 @@ class CartesianLayout {
     for (final s in options.series) {
       for (int i = 0; i < s.points.length; i++) {
         final p = s.points[i];
+        if (p.isNull) continue;
         final double xDomain = options.xAxisType == ApexXAxisType.datetime
             ? (p.x ?? 0)
             : i.toDouble();
@@ -209,6 +214,49 @@ class CartesianLayout {
       xDomainMax: domainMax,
       xViewMin: view.min,
       xViewMax: view.max,
+    );
+  }
+
+  /// Interpolate between two layouts for a zoom transition.
+  ///
+  /// This is the apex_dart equivalent of ApexCharts' `Animations.morphSVG`
+  /// (`el.plot(pathFrom).animate(speed).plot(pathTo)`): rather than recomputing
+  /// `niceScale` every frame from the interpolated x-window — which makes the
+  /// y-axis snap in discrete "nice number" steps while x slides smoothly — we
+  /// compute the *start* and *target* layouts once and lerp their numeric
+  /// fields. Because `yToPixel`/`xValueToPixel` read these lerped bounds, every
+  /// data point's pixel position moves continuously on **both** axes at once,
+  /// exactly like ApexCharts morphing the series paths.
+  static CartesianLayout lerp(CartesianLayout a, CartesianLayout b, double t) {
+    double mix(double x, double y) => x + (y - x) * t;
+
+    final yMin = mix(a.yMin, b.yMin);
+    final yMax = mix(a.yMax, b.yMax);
+
+    // Evenly spaced transitional ticks over the interpolated y-range, keeping
+    // the target tick count so it converges exactly to the target's nice ticks
+    // at t == 1 (target ticks are themselves evenly spaced).
+    final int tickCount = b.yTicks.length >= 2 ? b.yTicks.length : 2;
+    final ticks = <num>[];
+    final double step = (yMax - yMin) / (tickCount - 1);
+    for (int i = 0; i < tickCount; i++) {
+      ticks.add(yMin + step * i);
+    }
+
+    return CartesianLayout._(
+      plotRect: Rect.lerp(a.plotRect, b.plotRect, t)!,
+      yTicks: ticks,
+      yMin: yMin,
+      yMax: yMax,
+      pointCount: b.pointCount,
+      xCategories: b.xCategories,
+      xAxisType: b.xAxisType,
+      xNumericMin: b.xNumericMin,
+      xNumericMax: b.xNumericMax,
+      xDomainMin: b.xDomainMin,
+      xDomainMax: b.xDomainMax,
+      xViewMin: mix(a.xViewMin, b.xViewMin),
+      xViewMax: mix(a.xViewMax, b.xViewMax),
     );
   }
 

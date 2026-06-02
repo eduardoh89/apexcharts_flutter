@@ -73,6 +73,46 @@ void main() {
     });
   });
 
+  group('CartesianLayout.lerp zoom morph', () {
+    // Replicates ApexCharts' path-morph: x and y bounds must both move
+    // continuously between the start and target layouts, so the y-axis can't
+    // snap mid-transition.
+    final full = CartesianLayout.compute(options, size);
+    final target = CartesianLayout.compute(
+      options,
+      size,
+      xWindow: const XWindow(0, 2),
+    );
+
+    test('endpoints are exact at t=0 and t=1', () {
+      final at0 = CartesianLayout.lerp(full, target, 0);
+      final at1 = CartesianLayout.lerp(full, target, 1);
+      expect(at0.yMax, closeTo(full.yMax, 1e-9));
+      expect(at0.xViewMax, closeTo(full.xViewMax, 1e-9));
+      expect(at1.yMax, closeTo(target.yMax, 1e-9));
+      expect(at1.xViewMax, closeTo(target.xViewMax, 1e-9));
+    });
+
+    test('y-bound moves monotonically with progress (no snap)', () {
+      // target.yMax < full.yMax (zoomed window sees smaller values), so the
+      // interpolated yMax must decrease smoothly as t grows.
+      expect(target.yMax, lessThan(full.yMax));
+      final mid = CartesianLayout.lerp(full, target, 0.5);
+      expect(mid.yMax, lessThan(full.yMax));
+      expect(mid.yMax, greaterThan(target.yMax));
+      // Exactly halfway between the two endpoints.
+      expect(mid.yMax, closeTo((full.yMax + target.yMax) / 2, 1e-9));
+    });
+
+    test('x and y advance by the same fraction at t=0.5', () {
+      final mid = CartesianLayout.lerp(full, target, 0.5);
+      final xFrac =
+          (full.xViewMax - mid.xViewMax) / (full.xViewMax - target.xViewMax);
+      final yFrac = (full.yMax - mid.yMax) / (full.yMax - target.yMax);
+      expect(xFrac, closeTo(yFrac, 1e-6));
+    });
+  });
+
   group('zoom defaults by chart type', () {
     test('line/area default zoom enabled, bar/scatter off', () {
       ApexOptions parse(String t) => ApexOptions.fromJson({

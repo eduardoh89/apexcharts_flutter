@@ -1,6 +1,8 @@
 import 'package:apex_dart/apex_dart.dart';
 import 'package:flutter/material.dart';
 
+import 'area_datetime_demo.dart';
+
 void main() => runApp(const GalleryApp());
 
 /// A gallery that renders every apex_dart chart type so the port can be
@@ -197,6 +199,20 @@ class GalleryPage extends StatelessWidget {
         ),
         backgroundColor: const Color(0xFF008FFB),
         foregroundColor: Colors.white,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const AreaDatetimeDemo(),
+                ),
+              ),
+              style: TextButton.styleFrom(foregroundColor: Colors.white),
+              child: const Text('Area-Datetime demo →'),
+            ),
+          ),
+        ],
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {

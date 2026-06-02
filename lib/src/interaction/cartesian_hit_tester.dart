@@ -67,6 +67,7 @@ class CartesianHitTester {
     for (int i = 0; i < options.series.length; i++) {
       final s = options.series[i];
       if (nearest >= s.points.length) continue;
+      if (s.points[nearest].isNull) continue; // skip gaps
       final value = s.points[nearest].y;
       final color = s.color ?? options.colors[i % options.colors.length];
       rows.add(TooltipSeriesValue(
@@ -174,7 +175,21 @@ class CartesianHitTester {
     );
   }
 
-  double _xForIndex(int index) => layout.xCategoryToPixel(index);
+  /// Pixel x for the datum at [index]. For category charts the index maps to
+  /// an evenly spaced slot; for datetime/numeric it maps the datum's actual x
+  /// value (so the crosshair/markers land on the real data position, honoring
+  /// any zoom window).
+  double _xForIndex(int index) {
+    if (options.xAxisType == ApexXAxisType.category) {
+      return layout.xCategoryToPixel(index);
+    }
+    for (final s in options.series) {
+      if (index < s.points.length && s.points[index].x != null) {
+        return layout.xValueToPixel(s.points[index].x!);
+      }
+    }
+    return layout.xCategoryToPixel(index);
+  }
 
   // For the crosshair anchor we use the highest (min-y-pixel) series value so
   // the tooltip sits near the top of the stack of points.
@@ -200,7 +215,7 @@ class CartesianHitTester {
       if (index < s.points.length && s.points[index].x != null) {
         final x = s.points[index].x!;
         return options.xAxisType == ApexXAxisType.datetime
-            ? FormatValue.dateTitle(x)
+            ? FormatValue.date(x, options.tooltipXFormat)
             : FormatValue.number(x);
       }
     }

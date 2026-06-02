@@ -4,6 +4,7 @@ import '../options/apex_options.dart';
 import '../svg/text_drawer.dart';
 import '../utils/format_value.dart';
 import 'cartesian_layout.dart';
+import 'time_scale.dart';
 
 /// Draws the cartesian chart chrome: horizontal gridlines, y-axis labels and
 /// x-axis labels. Mirrors ApexCharts' default light theme:
@@ -103,31 +104,75 @@ class GridRenderer {
       // Bars label the center of each category band; line/area label the
       // point position (edge-to-edge).
       final bool banded = options.type == ApexChartType.bar;
+
+      // ApexCharts auto-rotates category labels (~-45°) when they would
+      // overlap. Estimate: if the widest label exceeds the per-slot width,
+      // rotate. The slot width is plotWidth / visible-points.
+      double widest = 0;
+      for (int i = 0; i < n; i++) {
+        final label = i < cats.length ? cats[i] : (i + 1).toString();
+        widest = widest > labeller.measure(label).width
+            ? widest
+            : labeller.measure(label).width;
+      }
+      final double slotWidth = n > 0 ? layout.plotRect.width / n : layout.plotRect.width;
+      final bool rotate = widest + 4 > slotWidth;
+      const double rotation = -0.7853981633974483; // -45°
+
       for (int i = 0; i < n; i++) {
         final label = i < cats.length ? cats[i] : (i + 1).toString();
         final x =
             banded ? layout.xBandCenter(i) : layout.xCategoryToPixel(i);
+        if (rotate) {
+          labeller.draw(
+            canvas,
+            label,
+            Offset(x, labelY + 2),
+            anchor: TextAnchor.end,
+            rotation: rotation,
+          );
+        } else {
+          labeller.draw(
+            canvas,
+            label,
+            Offset(x, labelY),
+            anchor: TextAnchor.middle,
+          );
+        }
+      }
+    } else if (options.xAxisType == ApexXAxisType.datetime) {
+      // Datetime: calendar-aligned ticks (TimeScale), each carrying a label
+      // whose format depends on the visible span (years / "MMM 'yy" / "dd MMM"
+      // / "HH:mm"). This is what makes a multi-year window show months/years
+      // instead of repeated day-of-month labels.
+      final ticks = TimeScale.ticks(
+        layout.xViewMin,
+        layout.xViewMax,
+        tickAmount: options.tickAmount,
+        gridWidth: layout.plotRect.width,
+      );
+      for (final tick in ticks) {
+        final x = layout.xValueToPixel(tick.ms);
+        if (x < layout.plotRect.left - 1 || x > layout.plotRect.right + 1) {
+          continue;
+        }
         labeller.draw(
           canvas,
-          label,
+          tick.label,
           Offset(x, labelY),
           anchor: TextAnchor.middle,
         );
       }
     } else {
-      // datetime/numeric: a handful of evenly spaced ticks across the visible
-      // window (so labels follow zoom/pan).
+      // numeric: a handful of evenly spaced ticks across the visible window.
       const desired = 6;
       for (int i = 0; i <= desired; i++) {
         final t = i / desired;
         final value = layout.xViewMin + t * (layout.xViewMax - layout.xViewMin);
         final x = layout.plotRect.left + t * layout.plotRect.width;
-        final label = options.xAxisType == ApexXAxisType.datetime
-            ? _fmtDate(value)
-            : _fmtNum(value);
         labeller.draw(
           canvas,
-          label,
+          _fmtNum(value),
           Offset(x, labelY),
           anchor: TextAnchor.middle,
         );
@@ -138,14 +183,5 @@ class GridRenderer {
   static String _fmtNum(num v) {
     if (v == v.truncate()) return v.toInt().toString();
     return v.toStringAsFixed(2);
-  }
-
-  static String _fmtDate(double msEpoch) {
-    final d = DateTime.fromMillisecondsSinceEpoch(msEpoch.round());
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-    ];
-    return '${d.day} ${months[d.month - 1]}';
   }
 }

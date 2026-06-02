@@ -34,6 +34,9 @@ Future<Uint8List> rasterizeWidget(
     ),
   );
   await tester.pump();
+  // Let any mount animation (ApexChart entrance, ~800ms) settle so goldens
+  // capture the final state, not a mid-animation frame.
+  await tester.pump(const Duration(milliseconds: 1200));
 
   final boundary =
       key.currentContext!.findRenderObject()! as RenderRepaintBoundary;

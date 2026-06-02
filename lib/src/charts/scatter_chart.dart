@@ -33,6 +33,7 @@ class ScatterChartRenderer {
 
       for (int i = 0; i < series.points.length; i++) {
         final p = series.points[i];
+        if (p.isNull) continue;
         final double x;
         if (options.xAxisType == ApexXAxisType.category) {
           x = layout.xCategoryToPixel(i);

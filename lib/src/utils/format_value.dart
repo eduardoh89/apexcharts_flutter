@@ -34,13 +34,35 @@ class FormatValue {
   static String percent(num fraction) =>
       '${(fraction * 100).toStringAsFixed(1)}%';
 
-  /// Default datetime tooltip title: "dd MMM" (e.g. "5 Jan").
+  static const List<String> _months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+
+  /// Default datetime tooltip title: "d MMM" (e.g. "5 Jan").
   static String dateTitle(num msEpoch) {
     final d = DateTime.fromMillisecondsSinceEpoch(msEpoch.round());
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-    ];
-    return '${d.day} ${months[d.month - 1]}';
+    return '${d.day} ${_months[d.month - 1]}';
+  }
+
+  /// Format an epoch-ms value using an ApexCharts-style date format token
+  /// string. Supports the common tokens used in demos: `dd`, `d`, `MMM`,
+  /// `MM`, `yyyy`, `yy`, `HH`, `mm`. Falls back to [dateTitle] when [format]
+  /// is null/empty.
+  static String date(num msEpoch, String? format) {
+    if (format == null || format.isEmpty) return dateTitle(msEpoch);
+    final d = DateTime.fromMillisecondsSinceEpoch(msEpoch.round());
+    String two(int v) => v.toString().padLeft(2, '0');
+    // Replace longest tokens first to avoid partial collisions.
+    return format
+        .replaceAll('yyyy', d.year.toString())
+        .replaceAll('yy', two(d.year % 100))
+        .replaceAll('MMM', _months[d.month - 1])
+        .replaceAll('MM', two(d.month))
+        .replaceAll('dd', two(d.day))
+        .replaceAll('HH', two(d.hour))
+        .replaceAll('mm', two(d.minute))
+        // Bare single-letter tokens last.
+        .replaceAll('d', d.day.toString());
   }
 }

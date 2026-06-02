@@ -71,10 +71,13 @@ class ApexSeries {
 }
 
 /// A single datum. [x] is null for category charts where the index is implied.
+/// [isNull] marks a missing value (ApexCharts `null` data point) so line/area
+/// renderers break the path into segments instead of drawing through it.
 class ApexPoint {
-  const ApexPoint({this.x, required this.y});
+  const ApexPoint({this.x, required this.y, this.isNull = false});
   final double? x;
   final double y;
+  final bool isNull;
 }
 
 /// The default ApexCharts color palette ("palette1").
@@ -226,16 +229,39 @@ class ApexValueFormat {
   }
 }
 
+/// Mount-animation configuration (`chart.animations`). ApexCharts enables a
+/// ~800ms ease-out entrance animation by default.
+class ApexAnimations {
+  const ApexAnimations({this.enabled = true, this.speedMs = 800});
+  final bool enabled;
+  final int speedMs;
+
+  static ApexAnimations parse(Map<String, dynamic>? a) {
+    if (a == null) return const ApexAnimations();
+    return ApexAnimations(
+      enabled: a['enabled'] as bool? ?? true,
+      speedMs: (a['speed'] as num?)?.toInt() ?? 800,
+    );
+  }
+}
+
 /// Zoom / pan configuration, ported from ApexCharts `chart.zoom` +
 /// `chart.toolbar`. ApexCharts enables x-zoom by default for line/area charts.
 class ApexZoom {
-  const ApexZoom({this.enabled = false, this.showToolbar = true});
+  const ApexZoom({
+    this.enabled = false,
+    this.showToolbar = true,
+    this.autoScaleYaxis = false,
+  });
 
   /// Whether drag-select + wheel zoom and pan are active.
   final bool enabled;
 
   /// Whether to show the reset/zoom toolbar buttons.
   final bool showToolbar;
+
+  /// Whether the y-axis rescales to the zoomed window (`zoom.autoScaleYaxis`).
+  final bool autoScaleYaxis;
 
   static ApexZoom parse(
     Map<String, dynamic>? zoom,
@@ -247,7 +273,122 @@ class ApexZoom {
         type == ApexChartType.line || type == ApexChartType.area;
     final enabled = zoom?['enabled'] as bool? ?? defaultEnabled;
     final showToolbar = toolbar?['show'] as bool? ?? true;
-    return ApexZoom(enabled: enabled, showToolbar: showToolbar);
+    final autoScale = zoom?['autoScaleYaxis'] as bool? ?? false;
+    return ApexZoom(
+      enabled: enabled,
+      showToolbar: showToolbar,
+      autoScaleYaxis: autoScale,
+    );
+  }
+}
+
+/// Gradient fill config for area charts (`fill.gradient`).
+class ApexGradientFill {
+  const ApexGradientFill({
+    this.enabled = false,
+    this.opacityFrom = 0.65,
+    this.opacityTo = 0.05,
+    this.stops = const [0, 100],
+    this.shade = 'dark',
+    this.shadeIntensity = 0.5,
+    this.inverseColors = true,
+  });
+
+  /// Whether a vertical gradient fill is used (fill.type == 'gradient').
+  final bool enabled;
+  final double opacityFrom;
+  final double opacityTo;
+
+  /// Gradient color stops as percentages [start, end].
+  final List<double> stops;
+
+  /// `fill.gradient.shade` — 'dark' shades the second color toward black,
+  /// 'light' toward white (ApexCharts Fill.js).
+  final String shade;
+
+  /// `fill.gradient.shadeIntensity` — how far the second color is shaded.
+  final double shadeIntensity;
+
+  /// `fill.gradient.inverseColors` — swap the from/to colors (default true), so
+  /// the *shaded* color sits at the top of the area and the base color at the
+  /// bottom.
+  final bool inverseColors;
+
+  static ApexGradientFill parse(Map<String, dynamic>? fill) {
+    if (fill == null) return const ApexGradientFill(enabled: true);
+    final isGradient = fill['type'] == 'gradient';
+    final g = fill['gradient'] as Map<String, dynamic>?;
+    return ApexGradientFill(
+      enabled: isGradient || g != null,
+      opacityFrom: (g?['opacityFrom'] as num?)?.toDouble() ?? 0.65,
+      opacityTo: (g?['opacityTo'] as num?)?.toDouble() ?? 0.05,
+      stops: (g?['stops'] as List?)?.map((e) => (e as num).toDouble()).toList() ??
+          const [0, 100],
+      shade: g?['shade'] as String? ?? 'dark',
+      shadeIntensity: (g?['shadeIntensity'] as num?)?.toDouble() ?? 0.5,
+      inverseColors: g?['inverseColors'] as bool? ?? true,
+    );
+  }
+}
+
+/// A horizontal (y) or vertical (x) annotation line with an optional label,
+/// ported from ApexCharts `annotations.yaxis[]` / `annotations.xaxis[]`.
+class ApexAnnotation {
+  const ApexAnnotation({
+    required this.value,
+    required this.isXAxis,
+    this.borderColor = const Color(0xFF999999),
+    this.labelText,
+    this.labelColor = const Color(0xFFFFFFFF),
+    this.labelBg = const Color(0xFF775DD0),
+  });
+
+  /// The axis value at which to draw the line (y-value, or x epoch-ms).
+  final double value;
+
+  /// True for a vertical line at an x value; false for a horizontal y line.
+  final bool isXAxis;
+
+  final Color borderColor;
+  final String? labelText;
+  final Color labelColor;
+  final Color labelBg;
+
+  static List<ApexAnnotation> parseAll(Map<String, dynamic>? annotations) {
+    if (annotations == null) return const [];
+    final out = <ApexAnnotation>[];
+    for (final entry in (annotations['yaxis'] as List? ?? const [])) {
+      final m = entry as Map<String, dynamic>;
+      out.add(_one(m, isXAxis: false, key: 'y'));
+    }
+    for (final entry in (annotations['xaxis'] as List? ?? const [])) {
+      final m = entry as Map<String, dynamic>;
+      out.add(_one(m, isXAxis: true, key: 'x'));
+    }
+    return out;
+  }
+
+  static ApexAnnotation _one(
+    Map<String, dynamic> m, {
+    required bool isXAxis,
+    required String key,
+  }) {
+    final label = m['label'] as Map<String, dynamic>?;
+    final style = label?['style'] as Map<String, dynamic>?;
+    return ApexAnnotation(
+      value: (m[key] as num).toDouble(),
+      isXAxis: isXAxis,
+      borderColor: m['borderColor'] is String
+          ? ApexColor.fromHex(m['borderColor'] as String)
+          : const Color(0xFF999999),
+      labelText: label?['text'] as String?,
+      labelColor: style?['color'] is String
+          ? ApexColor.fromHex(style!['color'] as String)
+          : const Color(0xFFFFFFFF),
+      labelBg: style?['background'] is String
+          ? ApexColor.fromHex(style!['background'] as String)
+          : const Color(0xFF775DD0),
+    );
   }
 }
 
@@ -273,6 +414,7 @@ class ApexOptions {
     required this.colors,
     this.curve = ApexCurve.straight,
     this.strokeWidth = 2,
+    this.dashArray = 0,
     this.categories = const [],
     this.xAxisType = ApexXAxisType.category,
     this.dataLabelsEnabled = false,
@@ -287,6 +429,13 @@ class ApexOptions {
     this.xTitle = const ApexAxisTitle(),
     this.yTitle = const ApexAxisTitle(),
     this.zoom = const ApexZoom(),
+    this.animations = const ApexAnimations(),
+    this.gradient = const ApexGradientFill(),
+    this.annotations = const [],
+    this.xMin,
+    this.xMax,
+    this.tickAmount,
+    this.tooltipXFormat,
     this.fontFamily,
   });
 
@@ -308,6 +457,27 @@ class ApexOptions {
   /// Zoom / pan configuration.
   final ApexZoom zoom;
 
+  /// Mount-animation configuration.
+  final ApexAnimations animations;
+
+  /// Gradient fill for area charts.
+  final ApexGradientFill gradient;
+
+  /// Y- and X-axis annotation lines.
+  final List<ApexAnnotation> annotations;
+
+  /// Initial x-axis window (`xaxis.min` / `xaxis.max`) in domain units (epoch
+  /// ms for datetime, index otherwise). null = full extent.
+  final double? xMin;
+  final double? xMax;
+
+  /// Desired number of x-axis ticks (`xaxis.tickAmount`).
+  final int? tickAmount;
+
+  /// Tooltip x-date format token string (`tooltip.x.format`, e.g.
+  /// `dd MMM yyyy`). null = default "d MMM".
+  final String? tooltipXFormat;
+
   /// Font family for axis/legend/data labels. `null` uses the platform
   /// default. ApexCharts' web default is Helvetica/Arial; pass a metrically
   /// similar family (e.g. Inter) for parity.
@@ -323,6 +493,9 @@ class ApexOptions {
   final List<Color> colors;
   final ApexCurve curve;
   final double strokeWidth;
+
+  /// Dash length for dashed line strokes (`stroke.dashArray`); 0 = solid.
+  final double dashArray;
   final List<String> categories;
   final ApexXAxisType xAxisType;
   final bool dataLabelsEnabled;
@@ -345,6 +518,7 @@ class ApexOptions {
     final stroke = json['stroke'] as Map<String, dynamic>?;
     final curve = ApexCurve.parse(stroke?['curve']);
     final strokeWidth = _firstNum(stroke?['width'])?.toDouble() ?? 2;
+    final dashArray = _firstNum(stroke?['dashArray'])?.toDouble() ?? 0;
 
     final xaxis = json['xaxis'] as Map<String, dynamic>?;
     final xAxisType = switch (xaxis?['type']) {
@@ -388,11 +562,23 @@ class ApexOptions {
     final xTitle = ApexAxisTitle.parse(xaxis);
     final yTitle = ApexAxisTitle.parse(yaxisMap);
 
+    final xMin = (xaxis?['min'] as num?)?.toDouble();
+    final xMax = (xaxis?['max'] as num?)?.toDouble();
+    final tickAmount = (xaxis?['tickAmount'] as num?)?.toInt();
+    final tooltipXFormat =
+        (tooltip?['x'] as Map<String, dynamic>?)?['format'] as String?;
+    final gradient = ApexGradientFill.parse(json['fill'] as Map<String, dynamic>?);
+    final annotations = ApexAnnotation.parseAll(
+      json['annotations'] as Map<String, dynamic>?,
+    );
+
     final zoom = ApexZoom.parse(
       chart['zoom'] as Map<String, dynamic>?,
       chart['toolbar'] as Map<String, dynamic>?,
       type,
     );
+    final animations =
+        ApexAnimations.parse(chart['animations'] as Map<String, dynamic>?);
 
     if (type.isRadial) {
       final pieSeries = (json['series'] as List? ?? const [])
@@ -410,6 +596,7 @@ class ApexOptions {
         legend: legend,
         pie: pie,
         yFormat: yFormat,
+        animations: animations,
         fontFamily: fontFamily,
       );
     }
@@ -424,6 +611,7 @@ class ApexOptions {
       colors: colors,
       curve: curve,
       strokeWidth: strokeWidth,
+      dashArray: dashArray,
       categories: categories,
       xAxisType: xAxisType,
       dataLabelsEnabled: dataLabelsEnabled,
@@ -436,12 +624,22 @@ class ApexOptions {
       xTitle: xTitle,
       yTitle: yTitle,
       zoom: zoom,
+      animations: animations,
+      gradient: gradient,
+      annotations: annotations,
+      xMin: xMin,
+      xMax: xMax,
+      tickAmount: tickAmount,
+      tooltipXFormat: tooltipXFormat,
       fontFamily: fontFamily,
     );
   }
 
   /// Returns a copy with the given fields replaced.
-  ApexOptions copyWith({String? fontFamily}) {
+  ApexOptions copyWith({
+    String? fontFamily,
+    bool? animationsEnabled,
+  }) {
     return ApexOptions(
       type: type,
       series: series,
@@ -450,6 +648,7 @@ class ApexOptions {
       colors: colors,
       curve: curve,
       strokeWidth: strokeWidth,
+      dashArray: dashArray,
       categories: categories,
       xAxisType: xAxisType,
       dataLabelsEnabled: dataLabelsEnabled,
@@ -462,6 +661,15 @@ class ApexOptions {
       xTitle: xTitle,
       yTitle: yTitle,
       zoom: zoom,
+      animations: animationsEnabled == null
+          ? animations
+          : ApexAnimations(enabled: animationsEnabled, speedMs: animations.speedMs),
+      gradient: gradient,
+      annotations: annotations,
+      xMin: xMin,
+      xMax: xMax,
+      tickAmount: tickAmount,
+      tooltipXFormat: tooltipXFormat,
       fontFamily: fontFamily ?? this.fontFamily,
     );
   }
@@ -476,18 +684,25 @@ class ApexOptions {
     for (int i = 0; i < rawData.length; i++) {
       final d = rawData[i];
       if (d is List && d.length >= 2) {
-        // [x, y] pair (datetime/numeric).
+        // [x, y] pair (datetime/numeric); y may be null (gap).
+        final yv = d[1];
         points.add(ApexPoint(
           x: (d[0] as num).toDouble(),
-          y: (d[1] as num).toDouble(),
+          y: yv is num ? yv.toDouble() : 0,
+          isNull: yv is! num,
         ));
       } else if (d is Map) {
+        final yv = d['y'];
         points.add(ApexPoint(
           x: (d['x'] as num?)?.toDouble(),
-          y: (d['y'] as num).toDouble(),
+          y: yv is num ? yv.toDouble() : 0,
+          isNull: yv is! num,
         ));
       } else if (d is num) {
         points.add(ApexPoint(x: null, y: d.toDouble()));
+      } else {
+        // bare null in the data array → gap at this index.
+        points.add(const ApexPoint(x: null, y: 0, isNull: true));
       }
     }
     return ApexSeries(name: name, points: points);

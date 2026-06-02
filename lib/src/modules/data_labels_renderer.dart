@@ -63,6 +63,7 @@ class DataLabelsRenderer {
       final s = options.series[i];
       for (int j = 0; j < s.points.length; j++) {
         final p = s.points[j];
+        if (p.isNull) continue;
         final double x = options.xAxisType == ApexXAxisType.category
             ? layout.xCategoryToPixel(j)
             : layout.xValueToPixel(p.x ?? j.toDouble());
