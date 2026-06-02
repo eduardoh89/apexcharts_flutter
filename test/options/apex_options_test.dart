@@ -63,4 +63,25 @@ void main() {
       expect(o.dataLabelsEnabled, isTrue);
     });
   });
+
+  group('ApexOptions.fromJson — bubble', () {
+    test('bubble_basic parses [x,y,z] triplets + numeric axis', () {
+      final o = ApexOptions.fromJson(_fixtureOptions('bubble_basic'));
+      expect(o.type, ApexChartType.bubble);
+      expect(o.type.isCartesian, isTrue);
+      expect(o.xAxisType, ApexXAxisType.numeric);
+      expect(o.series.length, 2);
+      final first = o.series.first.points.first;
+      expect(first.x, 10);
+      expect(first.y, 30);
+      expect(first.z, 25);
+      // plotOptions.bubble defaults (Options.js): zScaling true, no clamps.
+      expect(o.bubble.zScaling, isTrue);
+      expect(o.bubble.minBubbleRadius, isNull);
+      expect(o.bubble.maxBubbleRadius, isNull);
+      // explicit xaxis.min/max are picked up.
+      expect(o.xMin, 0);
+      expect(o.xMax, 100);
+    });
+  });
 }

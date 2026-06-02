@@ -126,7 +126,10 @@ class CartesianLayout {
 
     double domainMin;
     double domainMax;
-    if (options.xAxisType == ApexXAxisType.datetime) {
+    // datetime and numeric x-axes map by the real x value (epoch ms or a plain
+    // number, e.g. scatter/bubble); category maps by point index.
+    if (options.xAxisType == ApexXAxisType.datetime ||
+        options.xAxisType == ApexXAxisType.numeric) {
       double lo = double.infinity, hi = -double.infinity;
       for (final s in options.series) {
         for (final p in s.points) {
@@ -139,8 +142,9 @@ class CartesianLayout {
         lo = 0;
         hi = 1;
       }
-      domainMin = lo;
-      domainMax = hi;
+      // Honor explicit xaxis.min/max (the demo's [0, 100] bounds).
+      domainMin = options.xMin ?? lo;
+      domainMax = options.xMax ?? hi;
     } else {
       domainMin = 0;
       domainMax = (maxPoints <= 1 ? 1 : maxPoints - 1).toDouble();
@@ -157,7 +161,8 @@ class CartesianLayout {
       for (int i = 0; i < s.points.length; i++) {
         final p = s.points[i];
         if (p.isNull) continue;
-        final double xDomain = options.xAxisType == ApexXAxisType.datetime
+        final double xDomain = (options.xAxisType == ApexXAxisType.datetime ||
+                options.xAxisType == ApexXAxisType.numeric)
             ? (p.x ?? 0)
             : i.toDouble();
         if (xDomain < view.min - 1e-9 || xDomain > view.max + 1e-9) continue;

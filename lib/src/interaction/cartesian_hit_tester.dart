@@ -34,7 +34,8 @@ class CartesianHitTester {
       return null;
     }
 
-    if (options.type == ApexChartType.scatter) {
+    if (options.type == ApexChartType.scatter ||
+        options.type == ApexChartType.bubble) {
       return _intersectNearest(local);
     }
     if (options.type == ApexChartType.bar && options.bar.horizontal) {

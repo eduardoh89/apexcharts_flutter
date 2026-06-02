@@ -47,6 +47,7 @@ class DataLabelsRenderer {
       case ApexChartType.line:
       case ApexChartType.area:
       case ApexChartType.scatter:
+      case ApexChartType.bubble:
         _pointLabels(canvas, layout, options, labeller);
       default:
         break;

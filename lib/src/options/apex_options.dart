@@ -10,6 +10,7 @@ enum ApexChartType {
   pie,
   donut,
   scatter,
+  bubble,
   radialBar,
   heatmap;
 
@@ -25,6 +26,8 @@ enum ApexChartType {
         return ApexChartType.donut;
       case 'scatter':
         return ApexChartType.scatter;
+      case 'bubble':
+        return ApexChartType.bubble;
       case 'radialBar':
         return ApexChartType.radialBar;
       case 'heatmap':
@@ -36,7 +39,11 @@ enum ApexChartType {
   }
 
   bool get isCartesian =>
-      this == line || this == area || this == bar || this == scatter;
+      this == line ||
+      this == area ||
+      this == bar ||
+      this == scatter ||
+      this == bubble;
   bool get isRadial => this == pie || this == donut || this == radialBar;
 }
 
@@ -74,9 +81,13 @@ class ApexSeries {
 /// [isNull] marks a missing value (ApexCharts `null` data point) so line/area
 /// renderers break the path into segments instead of drawing through it.
 class ApexPoint {
-  const ApexPoint({this.x, required this.y, this.isNull = false});
+  const ApexPoint({this.x, required this.y, this.z, this.isNull = false});
   final double? x;
   final double y;
+
+  /// Third dimension for bubble charts (`[x, y, z]` / `{x, y, z}`); the bubble
+  /// radius is derived from this. Null for non-bubble points.
+  final double? z;
   final bool isNull;
 }
 
@@ -158,6 +169,31 @@ class ApexPieOptions {
     final donut = pie['donut'] as Map<String, dynamic>?;
     return ApexPieOptions(
       donutSizeFraction: _parsePercent(donut?['size']) ?? 0.65,
+    );
+  }
+}
+
+/// Bubble-specific plot options, ported from ApexCharts
+/// `settings/Options.js` `plotOptions.bubble` (zScaling:true, min/max radius
+/// undefined by default).
+class ApexBubbleOptions {
+  const ApexBubbleOptions({
+    this.zScaling = true,
+    this.minBubbleRadius,
+    this.maxBubbleRadius,
+  });
+
+  /// Whether the z value is scaled by the global z-ratio (`bubble.zScaling`).
+  final bool zScaling;
+  final double? minBubbleRadius;
+  final double? maxBubbleRadius;
+
+  static ApexBubbleOptions parse(Map<String, dynamic>? bubble) {
+    if (bubble == null) return const ApexBubbleOptions();
+    return ApexBubbleOptions(
+      zScaling: bubble['zScaling'] as bool? ?? true,
+      minBubbleRadius: (bubble['minBubbleRadius'] as num?)?.toDouble(),
+      maxBubbleRadius: (bubble['maxBubbleRadius'] as num?)?.toDouble(),
     );
   }
 }
@@ -441,6 +477,7 @@ class ApexOptions {
     this.legend = const ApexLegend(),
     this.bar = const ApexBarOptions(),
     this.pie = const ApexPieOptions(),
+    this.bubble = const ApexBubbleOptions(),
     this.labels = const [],
     this.pieSeries = const [],
     this.stacked = false,
@@ -522,6 +559,7 @@ class ApexOptions {
   final ApexLegend legend;
   final ApexBarOptions bar;
   final ApexPieOptions pie;
+  final ApexBubbleOptions bubble;
 
   /// Parse a raw ApexCharts `options` map (the subset apex_dart supports).
   factory ApexOptions.fromJson(Map<String, dynamic> json) {
@@ -561,6 +599,9 @@ class ApexOptions {
     );
     final pie = ApexPieOptions.parse(
       plotOptions?['pie'] as Map<String, dynamic>?,
+    );
+    final bubble = ApexBubbleOptions.parse(
+      plotOptions?['bubble'] as Map<String, dynamic>?,
     );
 
     final legend = ApexLegend.parse(json['legend'] as Map<String, dynamic>?);
@@ -639,6 +680,7 @@ class ApexOptions {
       legend: legend,
       bar: bar,
       pie: pie,
+      bubble: bubble,
       stacked: stacked,
       markers: markers,
       yFormat: yFormat,
@@ -676,6 +718,7 @@ class ApexOptions {
       legend: legend,
       bar: bar,
       pie: pie,
+      bubble: bubble,
       stacked: stacked,
       markers: markers,
       yFormat: yFormat,
@@ -705,11 +748,12 @@ class ApexOptions {
     for (int i = 0; i < rawData.length; i++) {
       final d = rawData[i];
       if (d is List && d.length >= 2) {
-        // [x, y] pair (datetime/numeric); y may be null (gap).
+        // [x, y] pair, or [x, y, z] triplet for bubbles; y may be null (gap).
         final yv = d[1];
         points.add(ApexPoint(
           x: (d[0] as num).toDouble(),
           y: yv is num ? yv.toDouble() : 0,
+          z: d.length >= 3 && d[2] is num ? (d[2] as num).toDouble() : null,
           isNull: yv is! num,
         ));
       } else if (d is Map) {
@@ -717,6 +761,7 @@ class ApexOptions {
         points.add(ApexPoint(
           x: (d['x'] as num?)?.toDouble(),
           y: yv is num ? yv.toDouble() : 0,
+          z: (d['z'] as num?)?.toDouble(),
           isNull: yv is! num,
         ));
       } else if (d is num) {

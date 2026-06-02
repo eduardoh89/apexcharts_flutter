@@ -503,6 +503,7 @@ class _ApexChartPainter extends CustomPainter {
       case ApexChartType.bar:
         _paintCartesian(canvas, size, _CartesianKind.bar);
       case ApexChartType.scatter:
+      case ApexChartType.bubble:
         _paintCartesian(canvas, size, _CartesianKind.scatter);
       case ApexChartType.pie:
       case ApexChartType.donut:

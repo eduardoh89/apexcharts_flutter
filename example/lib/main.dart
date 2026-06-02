@@ -167,6 +167,30 @@ class GalleryPage extends StatelessWidget {
           ],
           'xaxis': {'type': 'numeric'},
         }),
+        ChartSpec('Bubble', {
+          'chart': {'type': 'bubble'},
+          'colors': ['#008FFB', '#00E396', '#FEB019'],
+          'dataLabels': {'enabled': false},
+          'series': [
+            {
+              'name': 'Bubble A',
+              'data': [
+                [10, 30, 25], [25, 55, 40], [40, 20, 60],
+                [55, 70, 30], [70, 45, 50], [85, 60, 20]
+              ],
+            },
+            {
+              'name': 'Bubble B',
+              'data': [
+                [15, 50, 35], [30, 25, 55], [48, 65, 25],
+                [62, 35, 45], [78, 55, 60], [92, 40, 30]
+              ],
+            },
+          ],
+          'xaxis': {'type': 'numeric', 'min': 0, 'max': 100, 'tickAmount': 10},
+          'yaxis': {'max': 80},
+          'legend': {'show': false},
+        }),
         ChartSpec('Pie', {
           'chart': {'type': 'pie'},
           'colors': ['#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0'],
