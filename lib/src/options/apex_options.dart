@@ -314,19 +314,39 @@ class ApexGradientFill {
   /// bottom.
   final bool inverseColors;
 
-  static ApexGradientFill parse(Map<String, dynamic>? fill) {
-    if (fill == null) return const ApexGradientFill(enabled: true);
+  static ApexGradientFill parse(Map<String, dynamic>? fill, ApexChartType type) {
+    // ApexCharts' per-chart Defaults override the global fill gradient. For
+    // area charts (`Defaults.area()`), the fill gradient defaults to
+    // shade:'light', inverseColors:false, opacityFrom:0.65, opacityTo:0.5 — so
+    // the bottom of the area fades toward WHITE (the pale band in the demo),
+    // not toward black like the global default. Line/scatter keep the global
+    // shade:'dark' default.
+    final bool isArea = type == ApexChartType.area;
+    final double defOpacityFrom = isArea ? 0.65 : 0.65;
+    final double defOpacityTo = isArea ? 0.5 : 0.05;
+    final String defShade = isArea ? 'light' : 'dark';
+    final bool defInverse = isArea ? false : true;
+
+    if (fill == null) {
+      return ApexGradientFill(
+        enabled: true,
+        opacityFrom: defOpacityFrom,
+        opacityTo: defOpacityTo,
+        shade: defShade,
+        inverseColors: defInverse,
+      );
+    }
     final isGradient = fill['type'] == 'gradient';
     final g = fill['gradient'] as Map<String, dynamic>?;
     return ApexGradientFill(
       enabled: isGradient || g != null,
-      opacityFrom: (g?['opacityFrom'] as num?)?.toDouble() ?? 0.65,
-      opacityTo: (g?['opacityTo'] as num?)?.toDouble() ?? 0.05,
+      opacityFrom: (g?['opacityFrom'] as num?)?.toDouble() ?? defOpacityFrom,
+      opacityTo: (g?['opacityTo'] as num?)?.toDouble() ?? defOpacityTo,
       stops: (g?['stops'] as List?)?.map((e) => (e as num).toDouble()).toList() ??
           const [0, 100],
-      shade: g?['shade'] as String? ?? 'dark',
+      shade: g?['shade'] as String? ?? defShade,
       shadeIntensity: (g?['shadeIntensity'] as num?)?.toDouble() ?? 0.5,
-      inverseColors: g?['inverseColors'] as bool? ?? true,
+      inverseColors: g?['inverseColors'] as bool? ?? defInverse,
     );
   }
 }
@@ -567,7 +587,8 @@ class ApexOptions {
     final tickAmount = (xaxis?['tickAmount'] as num?)?.toInt();
     final tooltipXFormat =
         (tooltip?['x'] as Map<String, dynamic>?)?['format'] as String?;
-    final gradient = ApexGradientFill.parse(json['fill'] as Map<String, dynamic>?);
+    final gradient =
+        ApexGradientFill.parse(json['fill'] as Map<String, dynamic>?, type);
     final annotations = ApexAnnotation.parseAll(
       json['annotations'] as Map<String, dynamic>?,
     );
