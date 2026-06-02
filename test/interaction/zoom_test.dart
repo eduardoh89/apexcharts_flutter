@@ -5,8 +5,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   const size = Size(600, 360);
+  // autoScaleYaxis:true so the y-axis rescales to the visible window — these
+  // tests exercise that path (the morph/lerp machinery). With it off (the
+  // ApexCharts default) the y-axis stays fixed at the full extent.
   final options = ApexOptions.fromJson({
-    'chart': {'type': 'line', 'zoom': {'enabled': true}},
+    'chart': {
+      'type': 'line',
+      'zoom': {'enabled': true, 'autoScaleYaxis': true}
+    },
     'colors': ['#008FFB'],
     'series': [
       {'name': 'A', 'data': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
@@ -51,7 +57,7 @@ void main() {
       expect(layout.xCategoryToPixel(4), closeTo(layout.plotRect.right, 0.5));
     });
 
-    test('y-axis rescales to the visible window', () {
+    test('y-axis rescales to the visible window (autoScaleYaxis on)', () {
       // Full view: max 100. Window 0..2 only sees values 10,20,30 → niceMax<100.
       final full = CartesianLayout.compute(options, size);
       final zoomed = CartesianLayout.compute(
@@ -60,6 +66,40 @@ void main() {
         xWindow: const XWindow(0, 2),
       );
       expect(zoomed.yMax, lessThan(full.yMax));
+    });
+
+    test('y-axis stays fixed when autoScaleYaxis is off (ApexCharts default)',
+        () {
+      // Same data but without autoScaleYaxis: zooming must NOT move the y-axis,
+      // so it never snaps in discrete steps while panning.
+      final fixed = ApexOptions.fromJson({
+        'chart': {'type': 'line', 'zoom': {'enabled': true}},
+        'colors': ['#008FFB'],
+        'series': [
+          {'name': 'A', 'data': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
+        ],
+        'xaxis': {'categories': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]},
+      });
+      final full = CartesianLayout.compute(fixed, size);
+      final zoomed = CartesianLayout.compute(
+        fixed,
+        size,
+        xWindow: const XWindow(0, 2),
+      );
+      expect(zoomed.yMin, full.yMin);
+      expect(zoomed.yMax, full.yMax);
+    });
+
+    test('yOverride forces an explicit (animated) y range', () {
+      final layout = CartesianLayout.compute(
+        options,
+        size,
+        xWindow: const XWindow(0, 2),
+        yOverride: const YBounds(0, 200, [0, 50, 100, 150, 200]),
+      );
+      expect(layout.yMin, 0);
+      expect(layout.yMax, 200);
+      expect(layout.yTicks, [0, 50, 100, 150, 200]);
     });
 
     test('pixelToXDomain is the inverse of xCategoryToPixel', () {

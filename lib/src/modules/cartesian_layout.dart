@@ -49,6 +49,17 @@ class XWindow {
   int get hashCode => Object.hash(min, max);
 }
 
+/// A resolved y-axis range plus its tick values. Used to feed an animated
+/// (smoothly interpolated) y range into [CartesianLayout.compute] so the axis
+/// does not snap in discrete `niceScale` steps while panning with
+/// `autoScaleYaxis` enabled.
+class YBounds {
+  const YBounds(this.min, this.max, this.ticks);
+  final double min;
+  final double max;
+  final List<num> ticks;
+}
+
 /// Computes the cartesian plot geometry for line/area/bar/scatter charts:
 /// the inner plot rect (after reserving space for axis labels), the y-axis
 /// tick values, and value→pixel mapping functions.
@@ -124,6 +135,7 @@ class CartesianLayout {
     double legendLeft = 0,
     double legendRight = 0,
     XWindow? xWindow,
+    YBounds? yOverride,
   }) {
     // The x-domain is index-based for category/numeric/scatter and epoch-ms for
     // datetime. The visible window narrows it for zoom/pan.
@@ -167,8 +179,12 @@ class CartesianLayout {
     final XWindow view =
         (xWindow ?? XWindow(domainMin, domainMax)).clampTo(domainMin, domainMax);
 
-    // Determine y extent across all series, but only over the VISIBLE x-window
-    // so zooming in rescales the y-axis like ApexCharts does.
+    // Determine the y extent across all series. ApexCharts (`Range.getMinYMaxY`)
+    // only restricts the y range to the visible x-window when
+    // `zoom.autoScaleYaxis` is set; otherwise the y-axis stays fixed at the
+    // FULL data extent while you zoom/pan (so it never jumps). We mirror that:
+    // with autoScale off the window filter is skipped entirely.
+    final bool autoScaleY = options.zoom.autoScaleYaxis;
     double yLo = double.infinity;
     double yHi = -double.infinity;
     for (final s in options.series) {
@@ -180,7 +196,10 @@ class CartesianLayout {
                     options.xAxisType == ApexXAxisType.numeric))
             ? (p.x ?? 0)
             : i.toDouble();
-        if (xDomain < view.min - 1e-9 || xDomain > view.max + 1e-9) continue;
+        if (autoScaleY &&
+            (xDomain < view.min - 1e-9 || xDomain > view.max + 1e-9)) {
+          continue;
+        }
         yLo = math.min(yLo, p.y);
         yHi = math.max(yHi, p.y);
         // Range/timeline points span [y, yHigh]; the value axis must cover both.
@@ -219,9 +238,13 @@ class CartesianLayout {
         : options.logarithmic
             ? NiceScale.logarithmicScale(yLo, yHi, base: options.logBase)
             : NiceScale.niceScale(yLo, yHi, maxTicks: maxTicks);
-    final double resolvedYMin = scale?.niceMin.toDouble() ?? yLo;
-    final double resolvedYMax = scale?.niceMax.toDouble() ?? yHi;
-    final List<num> resolvedTicks = scale?.result ?? const [];
+    // The natural (target) y range from niceScale, possibly overridden by an
+    // animated range so a panning autoScaleY axis glides instead of snapping.
+    final double targetYMin = scale?.niceMin.toDouble() ?? yLo;
+    final double targetYMax = scale?.niceMax.toDouble() ?? yHi;
+    final double resolvedYMin = yOverride?.min ?? targetYMin;
+    final double resolvedYMax = yOverride?.max ?? targetYMax;
+    final List<num> resolvedTicks = yOverride?.ticks ?? scale?.result ?? const [];
 
     // Reserve gutter width based on the widest y label.
     final labeller = TextDrawer(fontFamily: options.fontFamily);

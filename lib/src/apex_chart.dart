@@ -1,4 +1,7 @@
 import 'package:flutter/gestures.dart';
+import 'dart:math' as math;
+
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
 import 'charts/bar_chart.dart';
@@ -117,6 +120,7 @@ class _ApexChartState extends State<ApexChart>
       vsync: this,
       duration: const Duration(milliseconds: 350),
     )..addListener(_onZoomTick);
+    _yFollowTicker = createTicker(_onYFollowTick);
     if (widget.options.animations.enabled) {
       _anim.forward();
     } else {
@@ -148,11 +152,20 @@ class _ApexChartState extends State<ApexChart>
     widget.controller?._detach(this);
     _anim.dispose();
     _zoomAnim.dispose();
+    _yFollowTicker.dispose();
     super.dispose();
   }
 
   // Current x-zoom window in domain units; null = full extent.
   XWindow? _window;
+
+  // Smoothly-followed y bounds for a panning `autoScaleYaxis` chart. The target
+  // is the niceScale range of the visible window; `_yFollow` eases the displayed
+  // range toward it each frame so the axis glides instead of snapping in
+  // discrete "nice number" steps (the y analogue of the zoom path-morph).
+  YBounds? _yDisplay;
+  late final Ticker _yFollowTicker;
+  Duration _yLastTick = Duration.zero;
 
   /// Drive the zoom-transition tween. We only need the eased progress here; the
   /// painter does the actual morph by building the *from* and *to* layouts and
@@ -162,6 +175,11 @@ class _ApexChartState extends State<ApexChart>
   /// `Animations.morphSVG`) rather than snapping in discrete "nice" steps.
   void _onZoomTick() {
     setState(() => _zoomT = Curves.easeInOut.transform(_zoomAnim.value));
+    // When the morph finishes, sync the y-follow display to the settled target
+    // so a subsequent pan eases from the right place (no jump).
+    if (!_zoomAnim.isAnimating) {
+      _yDisplay = _targetYBounds();
+    }
   }
 
   /// Animate the visible window from its current extent to [next] (null = full
@@ -282,9 +300,85 @@ class _ApexChartState extends State<ApexChart>
     final next = XWindow(curMin - dxDom, curMax - dxDom)
         .clampTo(layout.xDomainMin, layout.xDomainMax);
     setState(() => _window = next);
+    _ensureYFollow();
   }
 
   void _onPanEnd() => _panLastX = null;
+
+  /// Whether the y-axis should glide while the x-window changes (only when the
+  /// chart opted into `zoom.autoScaleYaxis`, otherwise the y range is fixed).
+  bool get _yAutoScale =>
+      widget.options.zoom.autoScaleYaxis && widget.options.animations.enabled;
+
+  /// Start the y-follow ticker if it isn't already running. The ticker eases
+  /// the displayed y bounds (`_yDisplay`) toward the target niceScale range of
+  /// the current window so the axis slides instead of snapping each frame.
+  void _ensureYFollow() {
+    if (!_yAutoScale) return;
+    if (!_yFollowTicker.isTicking) {
+      _yLastTick = Duration.zero;
+      _yFollowTicker.start();
+    }
+  }
+
+  /// Target (settled) y bounds for the current window — the niceScale range the
+  /// axis would show with no animation. Built without the y-override so it
+  /// reflects the true target (not the currently-eased display value).
+  YBounds? _targetYBounds() {
+    final size = _lastSize;
+    if (size == Size.zero) return null;
+    final pos = widget.options.legend.position;
+    final legendH = LegendRenderer.reservedHeight(widget.options);
+    final legendW = LegendRenderer.reservedWidth(widget.options);
+    final layout = CartesianLayout.compute(
+      widget.options,
+      size,
+      legendBottom: pos == ApexLegendPosition.bottom ? legendH : 0,
+      legendTop: pos == ApexLegendPosition.top ? legendH : 0,
+      legendLeft: pos == ApexLegendPosition.left ? legendW : 0,
+      legendRight: pos == ApexLegendPosition.right ? legendW : 0,
+      xWindow: _window,
+    );
+    return YBounds(layout.yMin, layout.yMax, layout.yTicks);
+  }
+
+  void _onYFollowTick(Duration elapsed) {
+    final target = _targetYBounds();
+    if (target == null) {
+      _yFollowTicker.stop();
+      return;
+    }
+    // Per-frame exponential ease toward the target (frame-rate independent).
+    final double dt = _yLastTick == Duration.zero
+        ? 1 / 60
+        : (elapsed - _yLastTick).inMicroseconds / 1e6;
+    _yLastTick = elapsed;
+    // Time constant ~120ms: fraction = 1 - e^(-dt/tau).
+    final double k = 1 - math.exp(-dt / 0.12);
+
+    final cur = _yDisplay ?? target;
+    final double nMin = cur.min + (target.min - cur.min) * k;
+    final double nMax = cur.max + (target.max - cur.max) * k;
+
+    // Transitional ticks: evenly spaced across the eased range with the
+    // target's tick count (converges to the target's nice ticks).
+    final int n = target.ticks.length >= 2 ? target.ticks.length : 2;
+    final ticks = <num>[];
+    final double step = (nMax - nMin) / (n - 1);
+    for (int i = 0; i < n; i++) {
+      ticks.add(nMin + step * i);
+    }
+    final next = YBounds(nMin, nMax, ticks);
+
+    // Settle and stop once we're within a pixel-imperceptible epsilon.
+    final double range = (target.max - target.min).abs();
+    final double eps = range < 1e-9 ? 1e-9 : range * 0.001;
+    final bool settled =
+        (nMin - target.min).abs() < eps && (nMax - target.max).abs() < eps;
+
+    setState(() => _yDisplay = settled ? target : next);
+    if (settled) _yFollowTicker.stop();
+  }
 
   void _onWheel(PointerScrollEvent e) {
     if (!_zoomEnabled) return;
@@ -326,6 +420,7 @@ class _ApexChartState extends State<ApexChart>
       _animateWindowTo(target);
     } else {
       setState(() => _window = target);
+      _ensureYFollow();
     }
   }
 
@@ -361,6 +456,8 @@ class _ApexChartState extends State<ApexChart>
       widget.options,
       hit: _hit,
       window: _window,
+      // Animated y bounds only apply outside a morph and when autoscaling.
+      yOverride: (!morphing && _yAutoScale) ? _yDisplay : null,
       morphFrom: morphing ? _zoomFrom : null,
       morphTo: morphing ? _zoomTo : null,
       morphT: morphing ? _zoomT : 1,
@@ -477,6 +574,7 @@ class _ApexChartPainter extends CustomPainter {
     this.options, {
     this.hit,
     this.window,
+    this.yOverride,
     this.morphFrom,
     this.morphTo,
     this.morphT = 1,
@@ -489,6 +587,12 @@ class _ApexChartPainter extends CustomPainter {
   final ApexOptions options;
   final ChartHit? hit;
   final XWindow? window;
+
+  /// Animated y-axis bounds for a panning `autoScaleYaxis` chart, so the axis
+  /// glides toward its target `niceScale` range instead of snapping in discrete
+  /// steps. Null = use the natural (target) range. Ignored during a morph
+  /// (the morph already lerps both axes together).
+  final YBounds? yOverride;
 
   /// Zoom-transition endpoints + eased progress. When [morphFrom]/[morphTo] are
   /// set the cartesian layout is the pixel-space lerp of the two endpoint
@@ -585,7 +689,7 @@ class _ApexChartPainter extends CustomPainter {
     final pos = options.legend.position;
     final legendH = LegendRenderer.reservedHeight(options);
     final legendW = LegendRenderer.reservedWidth(options);
-    CartesianLayout build(XWindow? w) => CartesianLayout.compute(
+    CartesianLayout build(XWindow? w, {YBounds? y}) => CartesianLayout.compute(
           options,
           size,
           legendBottom: pos == ApexLegendPosition.bottom ? legendH : 0,
@@ -593,6 +697,7 @@ class _ApexChartPainter extends CustomPainter {
           legendLeft: pos == ApexLegendPosition.left ? legendW : 0,
           legendRight: pos == ApexLegendPosition.right ? legendW : 0,
           xWindow: w,
+          yOverride: y,
         );
 
     // Mid-transition: build the start + target layouts (each with its own nice
@@ -600,7 +705,9 @@ class _ApexChartPainter extends CustomPainter {
     if (morphFrom != null && morphTo != null && morphT < 1) {
       return CartesianLayout.lerp(build(morphFrom), build(morphTo), morphT);
     }
-    return build(window);
+    // Outside a morph (e.g. live panning), an animated y-override lets the
+    // autoScaleY axis glide toward its target instead of snapping per frame.
+    return build(window, y: yOverride);
   }
 
   void _paintCartesian(Canvas canvas, Size size, _CartesianKind kind) {
