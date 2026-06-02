@@ -57,4 +57,23 @@ void main() {
       expect(r.niceMin, 0);
     });
   });
+
+  group('NiceScale.logarithmicScale', () {
+    test('powers of the base for a geometric range (1..1e6)', () {
+      final r = NiceScale.logarithmicScale(1, 1000000);
+      expect(r.niceMin, 1);
+      expect(r.niceMax, 1000000);
+      // 6 log decades + final tick at yMax -> 7 ticks: 1,10,...,1e6.
+      expect(r.result.length, 7);
+      expect(r.result.first, closeTo(1, 1e-6));
+      expect(r.result[1], closeTo(10, 1e-6));
+      expect(r.result.last, closeTo(1000000, 1e-3));
+    });
+
+    test('clamps non-positive bounds to the base', () {
+      final r = NiceScale.logarithmicScale(0, 100);
+      expect(r.niceMin, greaterThan(0));
+      expect(r.niceMax, 100);
+    });
+  });
 }

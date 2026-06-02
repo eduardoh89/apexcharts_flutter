@@ -70,7 +70,15 @@ class CartesianLayout {
     required this.xDomainMax,
     required this.xViewMin,
     required this.xViewMax,
+    this.logarithmic = false,
+    this.logBase = 10,
   });
+
+  /// Whether the value axis is logarithmic (`yaxis.logarithmic`).
+  final bool logarithmic;
+
+  /// Logarithm base for a logarithmic value axis.
+  final double logBase;
 
   /// Full x-domain extent in domain units (index for category/numeric, epoch
   /// ms for datetime). Zoom/pan windows are expressed against this.
@@ -201,9 +209,11 @@ class CartesianLayout {
     // to the absolute magnitude), so use the raw value extent with its own
     // tick labels (drawn by the rangeBar grid branch).
     final bool rangeAxis = options.type == ApexChartType.rangeBar;
-    final scale = rangeAxis
+    final ScaleResult? scale = rangeAxis
         ? null
-        : NiceScale.niceScale(yLo, yHi, maxTicks: maxTicks);
+        : options.logarithmic
+            ? NiceScale.logarithmicScale(yLo, yHi, base: options.logBase)
+            : NiceScale.niceScale(yLo, yHi, maxTicks: maxTicks);
     final double resolvedYMin = scale?.niceMin.toDouble() ?? yLo;
     final double resolvedYMax = scale?.niceMax.toDouble() ?? yHi;
     final List<num> resolvedTicks = scale?.result ?? const [];
@@ -255,6 +265,8 @@ class CartesianLayout {
       xDomainMax: domainMax,
       xViewMin: view.min,
       xViewMax: view.max,
+      logarithmic: options.logarithmic,
+      logBase: options.logBase,
     );
   }
 
@@ -298,6 +310,8 @@ class CartesianLayout {
       xDomainMax: b.xDomainMax,
       xViewMin: mix(a.xViewMin, b.xViewMin),
       xViewMax: mix(a.xViewMax, b.xViewMax),
+      logarithmic: b.logarithmic,
+      logBase: b.logBase,
     );
   }
 
@@ -306,8 +320,22 @@ class CartesianLayout {
       xViewMin > xDomainMin + 1e-9 || xViewMax < xDomainMax - 1e-9;
 
   /// Map a y data value to a pixel y (inverted: high values near the top).
+  ///
+  /// For a logarithmic axis the position is interpolated in log space
+  /// (`CoreUtils.getLogVal`): `t = (log(v) - log(min)) / (log(max) - log(min))`.
   double yToPixel(num value) {
-    final t = (value - yMin) / (yMax - yMin == 0 ? 1 : yMax - yMin);
+    double t;
+    if (logarithmic && yMin > 0 && yMax > 0) {
+      final double lb = math.log(logBase);
+      final double lMin = math.log(yMin) / lb;
+      final double lMax = math.log(yMax) / lb;
+      final double v = value <= 0 ? yMin.toDouble() : value.toDouble();
+      final double lv = math.log(v) / lb;
+      final double denom = lMax - lMin == 0 ? 1 : lMax - lMin;
+      t = (lv - lMin) / denom;
+    } else {
+      t = (value - yMin) / (yMax - yMin == 0 ? 1 : yMax - yMin);
+    }
     return plotRect.bottom - t * plotRect.height;
   }
 

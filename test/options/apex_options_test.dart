@@ -85,6 +85,16 @@ void main() {
     });
   });
 
+  group('ApexOptions.fromJson — logarithmic axis', () {
+    test('line_logarithmic parses yaxis.logarithmic + default base', () {
+      final o = ApexOptions.fromJson(_fixtureOptions('line_logarithmic'));
+      expect(o.logarithmic, isTrue);
+      expect(o.logBase, 10);
+      expect(o.series.first.points.map((p) => p.y).toList(),
+          [1, 10, 100, 1000, 10000, 100000, 1000000]);
+    });
+  });
+
   group('ApexOptions.fromJson — rangeBar/timeline', () {
     test('rangebar_timeline parses { x, y:[start,end] } range points', () {
       final o = ApexOptions.fromJson(_fixtureOptions('rangebar_timeline'));

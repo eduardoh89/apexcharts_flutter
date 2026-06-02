@@ -133,8 +133,15 @@ const List<String> kApexDefaultPalette = [
 enum ApexLegendPosition { top, right, bottom, left, none }
 
 class ApexLegend {
-  const ApexLegend({this.position = ApexLegendPosition.bottom});
+  const ApexLegend({
+    this.position = ApexLegendPosition.bottom,
+    this.showForSingleSeries = false,
+  });
   final ApexLegendPosition position;
+
+  /// `legend.showForSingleSeries` — when false (ApexCharts default) an axis
+  /// chart with a single series hides its legend.
+  final bool showForSingleSeries;
 
   static ApexLegend parse(Map<String, dynamic>? json) {
     if (json == null) return const ApexLegend();
@@ -142,17 +149,22 @@ class ApexLegend {
     if (show == false) {
       return const ApexLegend(position: ApexLegendPosition.none);
     }
+    final single = json['showForSingleSeries'] as bool? ?? false;
     switch (json['position']) {
       case 'top':
-        return const ApexLegend(position: ApexLegendPosition.top);
+        return ApexLegend(
+            position: ApexLegendPosition.top, showForSingleSeries: single);
       case 'right':
-        return const ApexLegend(position: ApexLegendPosition.right);
+        return ApexLegend(
+            position: ApexLegendPosition.right, showForSingleSeries: single);
       case 'left':
-        return const ApexLegend(position: ApexLegendPosition.left);
+        return ApexLegend(
+            position: ApexLegendPosition.left, showForSingleSeries: single);
       case 'bottom':
-        return const ApexLegend(position: ApexLegendPosition.bottom);
+        return ApexLegend(
+            position: ApexLegendPosition.bottom, showForSingleSeries: single);
       default:
-        return const ApexLegend();
+        return ApexLegend(showForSingleSeries: single);
     }
   }
 }
@@ -524,6 +536,8 @@ class ApexOptions {
     this.tickAmount,
     this.tooltipXFormat,
     this.fontFamily,
+    this.logarithmic = false,
+    this.logBase = 10,
   });
 
   final ApexChartType type;
@@ -560,6 +574,12 @@ class ApexOptions {
 
   /// Desired number of x-axis ticks (`xaxis.tickAmount`).
   final int? tickAmount;
+
+  /// Whether the (first) y-axis uses a logarithmic scale (`yaxis.logarithmic`).
+  final bool logarithmic;
+
+  /// Logarithm base for a logarithmic y-axis (`yaxis.logBase`, default 10).
+  final double logBase;
 
   /// Tooltip x-date format token string (`tooltip.x.format`, e.g.
   /// `dd MMM yyyy`). null = default "d MMM".
@@ -653,6 +673,9 @@ class ApexOptions {
     final xTitle = ApexAxisTitle.parse(xaxis);
     final yTitle = ApexAxisTitle.parse(yaxisMap);
 
+    final logarithmic = yaxisMap?['logarithmic'] as bool? ?? false;
+    final logBase = (yaxisMap?['logBase'] as num?)?.toDouble() ?? 10;
+
     final xMin = (xaxis?['min'] as num?)?.toDouble();
     final xMax = (xaxis?['max'] as num?)?.toDouble();
     final tickAmount = (xaxis?['tickAmount'] as num?)?.toInt();
@@ -725,6 +748,8 @@ class ApexOptions {
       tickAmount: tickAmount,
       tooltipXFormat: tooltipXFormat,
       fontFamily: fontFamily,
+      logarithmic: logarithmic,
+      logBase: logBase,
     );
   }
 
@@ -765,6 +790,8 @@ class ApexOptions {
       tickAmount: tickAmount,
       tooltipXFormat: tooltipXFormat,
       fontFamily: fontFamily ?? this.fontFamily,
+      logarithmic: logarithmic,
+      logBase: logBase,
     );
   }
 

@@ -1,0 +1,21 @@
+{
+  "name": "line_logarithmic",
+  "width": 600,
+  "height": 360,
+  "options": {
+    "chart": { "type": "line", "animations": { "enabled": false }, "toolbar": { "show": false }, "zoom": { "enabled": false } },
+    "stroke": { "curve": "straight", "width": 3 },
+    "colors": ["#008FFB"],
+    "series": [
+      {
+        "name": "Growth",
+        "data": [1, 10, 100, 1000, 10000, 100000, 1000000]
+      }
+    ],
+    "xaxis": {
+      "categories": ["A", "B", "C", "D", "E", "F", "G"]
+    },
+    "yaxis": { "logarithmic": true },
+    "dataLabels": { "enabled": false }
+  }
+}

@@ -193,6 +193,35 @@ class NiceScale {
     );
   }
 
+  /// Port of `Scales.logarithmicScale(yMin, yMax, base)`
+  /// (`src/modules/Scales.js`): ticks at `base^logTick` evenly spaced in log
+  /// space, with `niceMin = yMin`, `niceMax = yMax` and a final tick at yMax.
+  static ScaleResult logarithmicScale(num yMin, num yMax, {num base = 10}) {
+    // Basic validation to avoid for-loop starting at -inf.
+    if (yMax <= 0) yMax = math.max(yMin, base);
+    if (yMin <= 0) yMin = math.min(yMax, base);
+
+    final List<num> logs = [];
+    final double logMax = math.log(yMax) / math.log(base);
+    final double logMin = math.log(yMin) / math.log(base);
+    final double logRange = logMax - logMin;
+    final int ticks = logRange.round();
+
+    if (ticks <= 0) {
+      return ScaleResult(result: [yMin, yMax], niceMin: yMin, niceMax: yMax);
+    }
+
+    final double logTickSpacing = logRange / ticks;
+    double logTick = logMin;
+    for (int i = 0; i < ticks; i++, logTick += logTickSpacing) {
+      logs.add(math.pow(base, logTick));
+    }
+    // Final tick at yMax.
+    logs.add(math.pow(base, logMax));
+
+    return ScaleResult(result: logs, niceMin: yMin, niceMax: yMax);
+  }
+
   /// Port of `Scales.linearScale()` — evenly spaced ticks without the
   /// "nice number" snapping. Useful for axes that must honour an exact range.
   static ScaleResult linearScale(

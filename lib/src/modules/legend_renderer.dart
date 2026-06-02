@@ -15,8 +15,26 @@ class LegendRenderer {
   static const double _itemGap = 14;
   static const Color _textColor = Color(0xFF373D3F);
 
+  /// Whether the legend should be drawn at all. Ported from
+  /// `Legend.init()` `showLegendAlways`: an axis chart with a single series
+  /// hides the legend unless `legend.showForSingleSeries` is set; non-axis
+  /// charts (pie/donut/radialBar) always show it. `legend.show:false` (parsed
+  /// as position `none`) suppresses it entirely.
+  static bool _shouldShow(ApexOptions options) {
+    if (options.legend.position == ApexLegendPosition.none) return false;
+    final names = _names(options);
+    if (names.isEmpty) return false;
+    final bool axisChart = options.type.isCartesian;
+    if (!axisChart) return true; // pie/donut/radialBar always show.
+    final showAlways =
+        (options.legend.showForSingleSeries && names.length == 1) ||
+            names.length > 1;
+    return showAlways;
+  }
+
   /// Height reserved for a horizontal (top/bottom) legend, or 0 if none.
   static double reservedHeight(ApexOptions options) {
+    if (!_shouldShow(options)) return 0;
     final pos = options.legend.position;
     if (pos == ApexLegendPosition.bottom || pos == ApexLegendPosition.top) {
       return 26;
@@ -26,6 +44,7 @@ class LegendRenderer {
 
   /// Width reserved for a vertical (left/right) legend, or 0 if none.
   static double reservedWidth(ApexOptions options) {
+    if (!_shouldShow(options)) return 0;
     final pos = options.legend.position;
     if (pos != ApexLegendPosition.left && pos != ApexLegendPosition.right) {
       return 0;
@@ -45,11 +64,9 @@ class LegendRenderer {
     Size canvasSize,
     ApexOptions options,
   ) {
+    if (!_shouldShow(options)) return;
     final pos = options.legend.position;
-    if (pos == ApexLegendPosition.none) return;
-
     final names = _names(options);
-    if (names.isEmpty) return;
 
     final labeller =
         TextDrawer(color: _textColor, fontFamily: options.fontFamily, fontSize: 12);
