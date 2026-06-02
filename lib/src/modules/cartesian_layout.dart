@@ -5,6 +5,46 @@ import '../options/apex_options.dart';
 import '../svg/text_drawer.dart';
 import '../utils/range.dart';
 
+/// An x-axis viewport in *domain units*, used for zoom/pan. For category and
+/// numeric/scatter charts the domain unit is the data-point **index**
+/// (0..pointCount-1); for datetime it is the epoch-ms x value. `null` means
+/// "full extent" (no zoom).
+class XWindow {
+  const XWindow(this.min, this.max);
+  final double min;
+  final double max;
+
+  double get span => max - min;
+
+  XWindow clampTo(double domainMin, double domainMax) {
+    var lo = min;
+    var hi = max;
+    // Keep a minimum 1% span so the view can't collapse.
+    final minSpan = (domainMax - domainMin) * 0.01;
+    if (hi - lo < minSpan) {
+      final mid = (lo + hi) / 2;
+      lo = mid - minSpan / 2;
+      hi = mid + minSpan / 2;
+    }
+    if (lo < domainMin) {
+      hi += domainMin - lo;
+      lo = domainMin;
+    }
+    if (hi > domainMax) {
+      lo -= hi - domainMax;
+      hi = domainMax;
+    }
+    return XWindow(lo.clamp(domainMin, domainMax), hi.clamp(domainMin, domainMax));
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is XWindow && other.min == min && other.max == max;
+
+  @override
+  int get hashCode => Object.hash(min, max);
+}
+
 /// Computes the cartesian plot geometry for line/area/bar/scatter charts:
 /// the inner plot rect (after reserving space for axis labels), the y-axis
 /// tick values, and value→pixel mapping functions.
@@ -22,7 +62,20 @@ class CartesianLayout {
     required this.xAxisType,
     required this.xNumericMin,
     required this.xNumericMax,
+    required this.xDomainMin,
+    required this.xDomainMax,
+    required this.xViewMin,
+    required this.xViewMax,
   });
+
+  /// Full x-domain extent in domain units (index for category/numeric, epoch
+  /// ms for datetime). Zoom/pan windows are expressed against this.
+  final double xDomainMin;
+  final double xDomainMax;
+
+  /// Currently visible x-domain window (defaults to the full extent).
+  final double xViewMin;
+  final double xViewMax;
 
   /// The drawable plotting area (excludes axis gutters).
   final Rect plotRect;
@@ -58,14 +111,51 @@ class CartesianLayout {
     double legendTop = 0,
     double legendLeft = 0,
     double legendRight = 0,
+    XWindow? xWindow,
   }) {
-    // Determine y extent across all series.
-    double yLo = double.infinity;
-    double yHi = -double.infinity;
+    // The x-domain is index-based for category/numeric/scatter and epoch-ms for
+    // datetime. The visible window narrows it for zoom/pan.
     int maxPoints = 0;
     for (final s in options.series) {
       maxPoints = math.max(maxPoints, s.points.length);
-      for (final p in s.points) {
+    }
+
+    double domainMin;
+    double domainMax;
+    if (options.xAxisType == ApexXAxisType.datetime) {
+      double lo = double.infinity, hi = -double.infinity;
+      for (final s in options.series) {
+        for (final p in s.points) {
+          final x = p.x ?? 0;
+          lo = math.min(lo, x);
+          hi = math.max(hi, x);
+        }
+      }
+      if (!lo.isFinite) {
+        lo = 0;
+        hi = 1;
+      }
+      domainMin = lo;
+      domainMax = hi;
+    } else {
+      domainMin = 0;
+      domainMax = (maxPoints <= 1 ? 1 : maxPoints - 1).toDouble();
+    }
+
+    final XWindow view =
+        (xWindow ?? XWindow(domainMin, domainMax)).clampTo(domainMin, domainMax);
+
+    // Determine y extent across all series, but only over the VISIBLE x-window
+    // so zooming in rescales the y-axis like ApexCharts does.
+    double yLo = double.infinity;
+    double yHi = -double.infinity;
+    for (final s in options.series) {
+      for (int i = 0; i < s.points.length; i++) {
+        final p = s.points[i];
+        final double xDomain = options.xAxisType == ApexXAxisType.datetime
+            ? (p.x ?? 0)
+            : i.toDouble();
+        if (xDomain < view.min - 1e-9 || xDomain > view.max + 1e-9) continue;
         yLo = math.min(yLo, p.y);
         yHi = math.max(yHi, p.y);
       }
@@ -105,25 +195,6 @@ class CartesianLayout {
       size.height - _bottomGutter - legendBottom - xTitlePad,
     );
 
-    // X extent for datetime/numeric.
-    double xLo = 0;
-    double xHi = 0;
-    if (options.xAxisType != ApexXAxisType.category) {
-      xLo = double.infinity;
-      xHi = -double.infinity;
-      for (final s in options.series) {
-        for (final p in s.points) {
-          final x = p.x ?? 0;
-          xLo = math.min(xLo, x);
-          xHi = math.max(xHi, x);
-        }
-      }
-      if (!xLo.isFinite) {
-        xLo = 0;
-        xHi = 1;
-      }
-    }
-
     return CartesianLayout._(
       plotRect: plotRect,
       yTicks: scale.result,
@@ -132,10 +203,18 @@ class CartesianLayout {
       pointCount: maxPoints,
       xCategories: options.categories,
       xAxisType: options.xAxisType,
-      xNumericMin: xLo,
-      xNumericMax: xHi,
+      xNumericMin: domainMin,
+      xNumericMax: domainMax,
+      xDomainMin: domainMin,
+      xDomainMax: domainMax,
+      xViewMin: view.min,
+      xViewMax: view.max,
     );
   }
+
+  /// Whether the chart is zoomed in (view narrower than full domain).
+  bool get isZoomed =>
+      xViewMin > xDomainMin + 1e-9 || xViewMax < xDomainMax - 1e-9;
 
   /// Map a y data value to a pixel y (inverted: high values near the top).
   double yToPixel(num value) {
@@ -143,32 +222,46 @@ class CartesianLayout {
     return plotRect.bottom - t * plotRect.height;
   }
 
-  /// Map a category index to a pixel x.
+  /// Map a category/data-point index to a pixel x, honoring the zoom window.
   ///
-  /// ApexCharts places category-based line/area points spread across the full
-  /// plot width: index 0 at the left edge, last index at the right edge.
+  /// Index 0 sits at the left edge and the last index at the right edge when
+  /// unzoomed; when zoomed the visible window [xViewMin, xViewMax] (in index
+  /// units) is stretched across the full plot width.
   double xCategoryToPixel(int index) {
     if (pointCount <= 1) return plotRect.center.dx;
-    final t = index / (pointCount - 1);
+    final span = xViewMax - xViewMin;
+    final t = span == 0 ? 0.0 : (index - xViewMin) / span;
     return plotRect.left + t * plotRect.width;
   }
 
-  /// Map a numeric/datetime x value to a pixel x.
+  /// Map a numeric/datetime x value to a pixel x, honoring the zoom window.
   double xValueToPixel(double value) {
-    final range = xNumericMax - xNumericMin;
-    final t = range == 0 ? 0.0 : (value - xNumericMin) / range;
+    final span = xViewMax - xViewMin;
+    final t = span == 0 ? 0.0 : (value - xViewMin) / span;
     return plotRect.left + t * plotRect.width;
   }
 
-  /// Center pixel x for a category band (used by bar charts).
+  /// Inverse of [xCategoryToPixel]/[xValueToPixel]: pixel x → x-domain value.
+  double pixelToXDomain(double px) {
+    final t = (px - plotRect.left) / (plotRect.width == 0 ? 1 : plotRect.width);
+    return xViewMin + t * (xViewMax - xViewMin);
+  }
+
+  /// Center pixel x for a category band (used by bar charts), honoring zoom.
+  ///
+  /// Bars use a *band* model: each index occupies one slot of width
+  /// [bandWidth]; index `j`'s center sits half a band into its slot. The
+  /// visible window covers `viewSpan + 1` bands stretched across the plot.
   double xBandCenter(int index) {
     if (pointCount <= 0) return plotRect.center.dx;
-    final bandWidth = plotRect.width / pointCount;
-    return plotRect.left + bandWidth * (index + 0.5);
+    return plotRect.left + (index - xViewMin + 0.5) * bandWidth;
   }
 
-  double get bandWidth =>
-      pointCount <= 0 ? plotRect.width : plotRect.width / pointCount;
+  double get bandWidth {
+    if (pointCount <= 0) return plotRect.width;
+    final visibleBands = (xViewMax - xViewMin) + 1;
+    return plotRect.width / (visibleBands <= 0 ? 1 : visibleBands);
+  }
 
   static String _fmt(num v) {
     if (v == v.truncate()) return v.toInt().toString();

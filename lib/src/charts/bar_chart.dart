@@ -41,14 +41,15 @@ class BarChartRenderer {
     ApexOptions options,
   ) {
     final seriesLen = options.series.length;
-    final double xDivision = layout.plotRect.width / layout.pointCount;
+    final double xDivision = layout.bandWidth;
     final double barWidth =
         (xDivision / seriesLen) * options.bar.columnWidthFraction;
     final double groupPad = (xDivision - barWidth * seriesLen) / 2;
     final double baselineY = layout.yToPixel(0);
 
     for (int j = 0; j < layout.pointCount; j++) {
-      final double bandLeft = layout.plotRect.left + j * xDivision + groupPad;
+      final double bandLeft =
+          layout.xBandCenter(j) - xDivision / 2 + groupPad;
       for (int i = 0; i < seriesLen; i++) {
         final series = options.series[i];
         if (j >= series.points.length) continue;
@@ -78,12 +79,12 @@ class BarChartRenderer {
     ApexOptions options,
   ) {
     final seriesLen = options.series.length;
-    final double xDivision = layout.plotRect.width / layout.pointCount;
+    final double xDivision = layout.bandWidth;
     final double barWidth = xDivision * options.bar.columnWidthFraction;
     final double bandPad = (xDivision - barWidth) / 2;
 
     for (int j = 0; j < layout.pointCount; j++) {
-      final double left = layout.plotRect.left + j * xDivision + bandPad;
+      final double left = layout.xBandCenter(j) - xDivision / 2 + bandPad;
       double posAcc = 0;
       double negAcc = 0;
       for (int i = 0; i < seriesLen; i++) {

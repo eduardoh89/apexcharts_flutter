@@ -10,6 +10,7 @@ export 'src/charts/line_chart.dart';
 export 'src/charts/pie_chart.dart';
 export 'src/charts/scatter_chart.dart';
 export 'src/interaction/chart_hit.dart';
+export 'src/interaction/zoom_toolbar.dart';
 export 'src/modules/cartesian_layout.dart';
 export 'src/modules/data_labels_renderer.dart';
 export 'src/modules/grid_renderer.dart';

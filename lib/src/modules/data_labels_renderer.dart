@@ -87,10 +87,8 @@ class DataLabelsRenderer {
     if (seriesLen == 0 || layout.pointCount == 0) return;
 
     if (options.stacked) {
-      final double xDivision = layout.plotRect.width / layout.pointCount;
-      final double barWidth = xDivision * options.bar.columnWidthFraction;
       for (int j = 0; j < layout.pointCount; j++) {
-        final double cx = layout.plotRect.left + j * xDivision + xDivision / 2;
+        final double cx = layout.xBandCenter(j);
         double acc = 0;
         for (int i = 0; i < seriesLen; i++) {
           final s = options.series[i];
@@ -106,18 +104,17 @@ class DataLabelsRenderer {
             verticalCenter: true,
           );
         }
-        // silence unused barWidth lints by referencing it.
-        assert(barWidth >= 0);
       }
       return;
     }
 
-    final double xDivision = layout.plotRect.width / layout.pointCount;
+    final double xDivision = layout.bandWidth;
     final double barWidth =
         (xDivision / seriesLen) * options.bar.columnWidthFraction;
     final double groupPad = (xDivision - barWidth * seriesLen) / 2;
     for (int j = 0; j < layout.pointCount; j++) {
-      final double bandLeft = layout.plotRect.left + j * xDivision + groupPad;
+      final double bandLeft =
+          layout.xBandCenter(j) - xDivision / 2 + groupPad;
       for (int i = 0; i < seriesLen; i++) {
         final s = options.series[i];
         if (j >= s.points.length) continue;

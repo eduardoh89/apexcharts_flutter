@@ -115,12 +115,12 @@ class GridRenderer {
         );
       }
     } else {
-      // datetime/numeric: a handful of evenly spaced ticks.
+      // datetime/numeric: a handful of evenly spaced ticks across the visible
+      // window (so labels follow zoom/pan).
       const desired = 6;
       for (int i = 0; i <= desired; i++) {
         final t = i / desired;
-        final value =
-            layout.xNumericMin + t * (layout.xNumericMax - layout.xNumericMin);
+        final value = layout.xViewMin + t * (layout.xViewMax - layout.xViewMin);
         final x = layout.plotRect.left + t * layout.plotRect.width;
         final label = options.xAxisType == ApexXAxisType.datetime
             ? _fmtDate(value)

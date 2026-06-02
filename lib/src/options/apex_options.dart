@@ -226,6 +226,31 @@ class ApexValueFormat {
   }
 }
 
+/// Zoom / pan configuration, ported from ApexCharts `chart.zoom` +
+/// `chart.toolbar`. ApexCharts enables x-zoom by default for line/area charts.
+class ApexZoom {
+  const ApexZoom({this.enabled = false, this.showToolbar = true});
+
+  /// Whether drag-select + wheel zoom and pan are active.
+  final bool enabled;
+
+  /// Whether to show the reset/zoom toolbar buttons.
+  final bool showToolbar;
+
+  static ApexZoom parse(
+    Map<String, dynamic>? zoom,
+    Map<String, dynamic>? toolbar,
+    ApexChartType type,
+  ) {
+    // ApexCharts default: zoom enabled for line/area/scatter, off for bar/pie.
+    final bool defaultEnabled =
+        type == ApexChartType.line || type == ApexChartType.area;
+    final enabled = zoom?['enabled'] as bool? ?? defaultEnabled;
+    final showToolbar = toolbar?['show'] as bool? ?? true;
+    return ApexZoom(enabled: enabled, showToolbar: showToolbar);
+  }
+}
+
 /// Axis title text (`xaxis.title.text` / `yaxis.title.text`).
 class ApexAxisTitle {
   const ApexAxisTitle({this.text});
@@ -261,6 +286,7 @@ class ApexOptions {
     this.yFormat = const ApexValueFormat(),
     this.xTitle = const ApexAxisTitle(),
     this.yTitle = const ApexAxisTitle(),
+    this.zoom = const ApexZoom(),
     this.fontFamily,
   });
 
@@ -278,6 +304,9 @@ class ApexOptions {
   /// Axis titles.
   final ApexAxisTitle xTitle;
   final ApexAxisTitle yTitle;
+
+  /// Zoom / pan configuration.
+  final ApexZoom zoom;
 
   /// Font family for axis/legend/data labels. `null` uses the platform
   /// default. ApexCharts' web default is Helvetica/Arial; pass a metrically
@@ -359,6 +388,12 @@ class ApexOptions {
     final xTitle = ApexAxisTitle.parse(xaxis);
     final yTitle = ApexAxisTitle.parse(yaxisMap);
 
+    final zoom = ApexZoom.parse(
+      chart['zoom'] as Map<String, dynamic>?,
+      chart['toolbar'] as Map<String, dynamic>?,
+      type,
+    );
+
     if (type.isRadial) {
       final pieSeries = (json['series'] as List? ?? const [])
           .map((e) => (e as num).toDouble())
@@ -400,6 +435,7 @@ class ApexOptions {
       yFormat: yFormat,
       xTitle: xTitle,
       yTitle: yTitle,
+      zoom: zoom,
       fontFamily: fontFamily,
     );
   }
@@ -425,6 +461,7 @@ class ApexOptions {
       yFormat: yFormat,
       xTitle: xTitle,
       yTitle: yTitle,
+      zoom: zoom,
       fontFamily: fontFamily ?? this.fontFamily,
     );
   }

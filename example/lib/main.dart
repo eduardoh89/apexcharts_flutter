@@ -66,22 +66,26 @@ class GalleryPage extends StatelessWidget {
             'categories': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
           },
         }),
-        ChartSpec('Line — smooth (datetime)', {
-          'chart': {'type': 'line'},
+        ChartSpec('Line — zoomable timeseries (drag / wheel to zoom)', {
+          'chart': {'type': 'line', 'zoom': {'enabled': true}},
           'stroke': {'curve': 'smooth', 'width': 3},
           'colors': ['#775DD0'],
           'series': [
             {
               'name': 'Visitors',
               'data': [
-                [1704067200000, 30],
-                [1704153600000, 40],
-                [1704240000000, 35],
-                [1704326400000, 50],
-                [1704412800000, 49],
-                [1704499200000, 60],
-                [1704585600000, 70],
-                [1704672000000, 91],
+                for (int d = 0; d < 40; d++)
+                  [
+                    1704067200000 + d * 86400000,
+                    (30 +
+                        35 *
+                            (0.5 +
+                                0.5 *
+                                    (d % 7 == 0
+                                        ? 1.0
+                                        : (d % 5) / 5.0)) +
+                        (d * 1.4)).round()
+                  ]
               ],
             }
           ],
