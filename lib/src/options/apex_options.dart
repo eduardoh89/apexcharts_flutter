@@ -12,6 +12,7 @@ enum ApexChartType {
   scatter,
   bubble,
   rangeBar,
+  radar,
   radialBar,
   heatmap;
 
@@ -23,6 +24,8 @@ enum ApexChartType {
         return ApexChartType.bar;
       case 'rangeBar':
         return ApexChartType.rangeBar;
+      case 'radar':
+        return ApexChartType.radar;
       case 'pie':
         return ApexChartType.pie;
       case 'donut':

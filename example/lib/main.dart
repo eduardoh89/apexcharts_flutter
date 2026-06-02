@@ -225,6 +225,19 @@ class GalleryPage extends StatelessWidget {
           },
           'legend': {'show': false},
         }),
+        ChartSpec('Radar', {
+          'chart': {'type': 'radar'},
+          'colors': ['#008FFB', '#FF4560'],
+          'dataLabels': {'enabled': false},
+          'series': [
+            {'name': 'Series A', 'data': [80, 50, 30, 40, 100, 20]},
+            {'name': 'Series B', 'data': [20, 30, 40, 80, 20, 80]},
+          ],
+          'xaxis': {
+            'categories': ['Speed', 'Power', 'Range', 'Armor', 'Agility', 'Stealth']
+          },
+          'legend': {'show': false},
+        }),
         ChartSpec('Pie', {
           'chart': {'type': 'pie'},
           'colors': ['#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0'],

@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'charts/bar_chart.dart';
 import 'charts/line_chart.dart';
 import 'charts/pie_chart.dart';
+import 'charts/radar_chart.dart';
 import 'charts/radial_bar_chart.dart';
 import 'charts/range_bar_chart.dart';
 import 'charts/scatter_chart.dart';
@@ -514,10 +515,29 @@ class _ApexChartPainter extends CustomPainter {
         _paintPie(canvas, size);
       case ApexChartType.radialBar:
         _paintRadialBar(canvas, size);
+      case ApexChartType.radar:
+        _paintRadar(canvas, size);
       case ApexChartType.heatmap:
         onLayout(null, size);
         break;
     }
+  }
+
+  void _paintRadar(Canvas canvas, Size size) {
+    onLayout(null, size);
+    final double t = progress;
+    if (t < 1) {
+      final center = Offset(size.width / 2, size.height / 2);
+      canvas.save();
+      canvas.translate(center.dx, center.dy);
+      canvas.scale(t);
+      canvas.translate(-center.dx, -center.dy);
+      RadarChartRenderer.paint(canvas, size, options);
+      canvas.restore();
+    } else {
+      RadarChartRenderer.paint(canvas, size, options);
+    }
+    LegendRenderer.paint(canvas, size, options);
   }
 
   void _paintRadialBar(Canvas canvas, Size size) {

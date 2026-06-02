@@ -1,0 +1,18 @@
+{
+  "name": "radar_basic",
+  "width": 450,
+  "height": 450,
+  "options": {
+    "chart": { "type": "radar", "animations": { "enabled": false }, "toolbar": { "show": false } },
+    "colors": ["#008FFB", "#FF4560"],
+    "dataLabels": { "enabled": false },
+    "series": [
+      { "name": "Series A", "data": [80, 50, 30, 40, 100, 20] },
+      { "name": "Series B", "data": [20, 30, 40, 80, 20, 80] }
+    ],
+    "xaxis": {
+      "categories": ["Speed", "Power", "Range", "Armor", "Agility", "Stealth"]
+    },
+    "legend": { "show": false }
+  }
+}

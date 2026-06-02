@@ -85,6 +85,18 @@ void main() {
     });
   });
 
+  group('ApexOptions.fromJson — radar', () {
+    test('radar_basic parses series + categories (axis chart)', () {
+      final o = ApexOptions.fromJson(_fixtureOptions('radar_basic'));
+      expect(o.type, ApexChartType.radar);
+      expect(o.type.isRadial, isFalse);
+      expect(o.series.length, 2);
+      expect(o.series.first.points.length, 6);
+      expect(o.categories, hasLength(6));
+      expect(o.categories.first, 'Speed');
+    });
+  });
+
   group('ApexOptions.fromJson — radialBar', () {
     test('radialbar_basic parses gauge value + plotOptions.radialBar', () {
       final o = ApexOptions.fromJson(_fixtureOptions('radialbar_basic'));
