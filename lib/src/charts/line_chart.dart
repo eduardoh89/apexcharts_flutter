@@ -55,6 +55,24 @@ class LineChartRenderer {
 
       final path = ApexPaths.linePath(pixelPoints, options.curve);
       canvas.drawPath(path, linePaint);
+
+      // Static markers (ApexCharts markers.size; default 0 = hidden).
+      final double mSize = options.markers.size;
+      if (mSize > 0) {
+        final fill = Paint()
+          ..style = PaintingStyle.fill
+          ..color = color
+          ..isAntiAlias = true;
+        final stroke = Paint()
+          ..style = PaintingStyle.stroke
+          ..color = options.markers.strokeColor
+          ..strokeWidth = options.markers.strokeWidth
+          ..isAntiAlias = true;
+        for (final p in pixelPoints) {
+          canvas.drawCircle(p, mSize, fill);
+          canvas.drawCircle(p, mSize, stroke);
+        }
+      }
     }
   }
 

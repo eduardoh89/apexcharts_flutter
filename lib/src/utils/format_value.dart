@@ -1,3 +1,5 @@
+import '../options/apex_options.dart';
+
 /// Number formatting helpers matching ApexCharts' default label formatters
 /// (`Formatters.defaultYFormatter` / `defaultGeneralFormatter`).
 class FormatValue {
@@ -17,6 +19,15 @@ class FormatValue {
       s = s.replaceAll(RegExp(r'\.$'), '');
     }
     return s;
+  }
+
+  /// Apply an [ApexValueFormat] (prefix/suffix/decimals) to a value, matching
+  /// the common `tooltip.y.formatter` use cases (currency, %, units).
+  static String formatted(num value, ApexValueFormat fmt) {
+    final String core = fmt.decimals != null
+        ? value.toStringAsFixed(fmt.decimals!)
+        : number(value);
+    return '${fmt.prefix}$core${fmt.suffix}';
   }
 
   /// Percentage with one decimal, matching the pie/donut data-label default.

@@ -33,14 +33,24 @@ class GalleryPage extends StatelessWidget {
   const GalleryPage({super.key});
 
   List<ChartSpec> get _specs => [
-        ChartSpec('Line — simple', {
+        ChartSpec('Line — markers + axis titles + \$ format', {
           'chart': {'type': 'line'},
           'stroke': {'curve': 'straight', 'width': 3},
           'colors': ['#008FFB'],
+          'markers': {'size': 5},
           'series': [
             {'name': 'Sales', 'data': [10, 41, 35, 51, 49, 62, 69, 91, 148]}
           ],
-          'xaxis': {'categories': [1, 2, 3, 4, 5, 6, 7, 8, 9]},
+          'xaxis': {
+            'categories': [1, 2, 3, 4, 5, 6, 7, 8, 9],
+            'title': {'text': 'Week'},
+          },
+          'yaxis': {
+            'title': {'text': 'Revenue'},
+          },
+          'tooltip': {
+            'y': {'prefix': r'$', 'suffix': 'k'}
+          },
           'dataLabels': {'enabled': false},
         }),
         ChartSpec('Line — multi-series', {

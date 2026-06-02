@@ -76,7 +76,7 @@ class PieHitTester {
             TooltipSeriesValue(
               color: color,
               seriesName: label,
-              formattedValue: FormatValue.number(v),
+              formattedValue: FormatValue.formatted(v, options.yFormat),
               highlighted: true,
             ),
           ],

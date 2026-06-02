@@ -72,7 +72,7 @@ class CartesianHitTester {
       rows.add(TooltipSeriesValue(
         color: color,
         seriesName: s.name.isEmpty ? 'Series ${i + 1}' : s.name,
-        formattedValue: FormatValue.number(value),
+        formattedValue: FormatValue.formatted(value, options.yFormat),
       ));
       if (!banded) {
         markers.add(MarkerPoint(
@@ -107,7 +107,8 @@ class CartesianHitTester {
       rows.add(TooltipSeriesValue(
         color: color,
         seriesName: s.name.isEmpty ? 'Series ${i + 1}' : s.name,
-        formattedValue: FormatValue.number(s.points[nearest].y),
+        formattedValue:
+            FormatValue.formatted(s.points[nearest].y, options.yFormat),
       ));
     }
     if (rows.isEmpty) return null;
@@ -164,7 +165,7 @@ class CartesianHitTester {
         TooltipSeriesValue(
           color: color,
           seriesName: s.name.isEmpty ? 'Series ${bestSeries + 1}' : s.name,
-          formattedValue: FormatValue.number(p.y),
+          formattedValue: FormatValue.formatted(p.y, options.yFormat),
           highlighted: true,
         ),
       ],

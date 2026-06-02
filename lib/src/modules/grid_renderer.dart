@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import '../options/apex_options.dart';
 import '../svg/text_drawer.dart';
+import '../utils/format_value.dart';
 import 'cartesian_layout.dart';
 
 /// Draws the cartesian chart chrome: horizontal gridlines, y-axis labels and
@@ -37,9 +38,14 @@ class GridRenderer {
         Offset(layout.plotRect.right, y),
         gridPaint,
       );
+      // For horizontal bars the value axis is X, not Y — skip y-tick value
+      // labels there (the category labels are drawn along Y instead).
+      final String yLabel = options.bar.horizontal
+          ? _fmtNum(tick)
+          : FormatValue.formatted(tick, options.yFormat);
       labeller.draw(
         canvas,
-        _fmtNum(tick),
+        yLabel,
         Offset(layout.plotRect.left - 10, y),
         anchor: TextAnchor.end,
         verticalCenter: true,
@@ -47,6 +53,40 @@ class GridRenderer {
     }
 
     _paintXLabels(canvas, layout, options, labeller);
+    _paintAxisTitles(canvas, layout, options);
+  }
+
+  static void _paintAxisTitles(
+    Canvas canvas,
+    CartesianLayout layout,
+    ApexOptions options,
+  ) {
+    final titleDrawer = TextDrawer(
+      color: _labelColor,
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      fontFamily: options.fontFamily,
+    );
+
+    if (options.xTitle.hasText) {
+      titleDrawer.draw(
+        canvas,
+        options.xTitle.text!,
+        Offset(layout.plotRect.center.dx, layout.plotRect.bottom + 26),
+        anchor: TextAnchor.middle,
+      );
+    }
+
+    if (options.yTitle.hasText) {
+      // Rotated -90° along the left edge, vertically centered on the plot.
+      titleDrawer.draw(
+        canvas,
+        options.yTitle.text!,
+        Offset(14, layout.plotRect.center.dy),
+        anchor: TextAnchor.middle,
+        rotation: -1.5707963267948966, // -pi/2
+      );
+    }
   }
 
   static void _paintXLabels(

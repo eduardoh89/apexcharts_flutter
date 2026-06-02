@@ -159,6 +159,86 @@ class ApexPieOptions {
   }
 }
 
+/// Point-marker configuration for line/area/scatter, ported from ApexCharts
+/// `markers`. ApexCharts defaults `size: 0` for line/area (markers hidden until
+/// hover) and `size: 6` for scatter.
+class ApexMarkers {
+  const ApexMarkers({
+    required this.size,
+    this.strokeWidth = 2,
+    this.strokeColor = const Color(0xFFFFFFFF),
+    this.hoverSize = 6,
+  });
+
+  /// Base marker radius in px. 0 hides the static marker.
+  final double size;
+  final double strokeWidth;
+  final Color strokeColor;
+
+  /// Radius used when a point is highlighted on hover (ApexCharts
+  /// `markers.hover.size`, default ~ size+3, min 6 for line/area).
+  final double hoverSize;
+
+  static ApexMarkers parse(Map<String, dynamic>? m, ApexChartType type) {
+    final double defaultSize = type == ApexChartType.scatter ? 6 : 0;
+    if (m == null) return ApexMarkers(size: defaultSize);
+    final size = _firstNum(m['size'])?.toDouble() ?? defaultSize;
+    final hover = m['hover'] as Map<String, dynamic>?;
+    final hoverSize = _firstNum(hover?['size'])?.toDouble() ??
+        (size > 0 ? size + 3 : 6);
+    return ApexMarkers(
+      size: size,
+      strokeWidth: _firstNum(m['strokeWidth'])?.toDouble() ?? 2,
+      strokeColor: m['strokeColors'] is String
+          ? ApexColor.fromHex(m['strokeColors'] as String)
+          : const Color(0xFFFFFFFF),
+      hoverSize: hoverSize,
+    );
+  }
+}
+
+/// A value formatter: prefix/suffix wrapping plus fixed decimal places,
+/// covering the common `tooltip.y.formatter` / `yaxis.labels.formatter` cases
+/// (currency, %, units) without requiring a Dart callback in JSON.
+class ApexValueFormat {
+  const ApexValueFormat({
+    this.prefix = '',
+    this.suffix = '',
+    this.decimals,
+  });
+
+  final String prefix;
+  final String suffix;
+
+  /// Fixed decimal places; null = ApexCharts default (whole numbers bare,
+  /// otherwise trimmed).
+  final int? decimals;
+
+  bool get isIdentity => prefix.isEmpty && suffix.isEmpty && decimals == null;
+
+  static ApexValueFormat parse(Map<String, dynamic>? json) {
+    if (json == null) return const ApexValueFormat();
+    return ApexValueFormat(
+      prefix: json['prefix'] as String? ?? '',
+      suffix: json['suffix'] as String? ?? '',
+      decimals: (json['decimals'] as num?)?.toInt(),
+    );
+  }
+}
+
+/// Axis title text (`xaxis.title.text` / `yaxis.title.text`).
+class ApexAxisTitle {
+  const ApexAxisTitle({this.text});
+  final String? text;
+  bool get hasText => text != null && text!.isNotEmpty;
+
+  static ApexAxisTitle parse(Map<String, dynamic>? axis) {
+    if (axis == null) return const ApexAxisTitle();
+    final title = axis['title'] as Map<String, dynamic>?;
+    return ApexAxisTitle(text: title?['text'] as String?);
+  }
+}
+
 /// Fully-parsed, strongly-typed chart configuration — the apex_dart analogue of
 /// ApexCharts' merged options object.
 class ApexOptions {
@@ -177,6 +257,10 @@ class ApexOptions {
     this.labels = const [],
     this.pieSeries = const [],
     this.stacked = false,
+    this.markers = const ApexMarkers(size: 0),
+    this.yFormat = const ApexValueFormat(),
+    this.xTitle = const ApexAxisTitle(),
+    this.yTitle = const ApexAxisTitle(),
     this.fontFamily,
   });
 
@@ -184,6 +268,16 @@ class ApexOptions {
 
   /// Whether bar series are stacked (`chart.stacked: true`).
   final bool stacked;
+
+  /// Point-marker configuration for line/area/scatter.
+  final ApexMarkers markers;
+
+  /// Formatter applied to y-values in tooltips, data labels and y-axis labels.
+  final ApexValueFormat yFormat;
+
+  /// Axis titles.
+  final ApexAxisTitle xTitle;
+  final ApexAxisTitle yTitle;
 
   /// Font family for axis/legend/data labels. `null` uses the platform
   /// default. ApexCharts' web default is Helvetica/Arial; pass a metrically
@@ -248,6 +342,23 @@ class ApexOptions {
 
     final legend = ApexLegend.parse(json['legend'] as Map<String, dynamic>?);
 
+    final markers =
+        ApexMarkers.parse(json['markers'] as Map<String, dynamic>?, type);
+
+    // y-value formatter: prefer tooltip.y, fall back to yaxis.labels.
+    final tooltip = json['tooltip'] as Map<String, dynamic>?;
+    final yaxisList = json['yaxis'];
+    final yaxisMap = yaxisList is List
+        ? (yaxisList.isNotEmpty ? yaxisList.first as Map<String, dynamic>? : null)
+        : yaxisList as Map<String, dynamic>?;
+    final yFormat = ApexValueFormat.parse(
+      (tooltip?['y'] as Map<String, dynamic>?) ??
+          (yaxisMap?['labels'] as Map<String, dynamic>?),
+    );
+
+    final xTitle = ApexAxisTitle.parse(xaxis);
+    final yTitle = ApexAxisTitle.parse(yaxisMap);
+
     if (type.isRadial) {
       final pieSeries = (json['series'] as List? ?? const [])
           .map((e) => (e as num).toDouble())
@@ -263,6 +374,7 @@ class ApexOptions {
         dataLabelsEnabled: dataLabelsEnabled,
         legend: legend,
         pie: pie,
+        yFormat: yFormat,
         fontFamily: fontFamily,
       );
     }
@@ -284,6 +396,10 @@ class ApexOptions {
       bar: bar,
       pie: pie,
       stacked: stacked,
+      markers: markers,
+      yFormat: yFormat,
+      xTitle: xTitle,
+      yTitle: yTitle,
       fontFamily: fontFamily,
     );
   }
@@ -305,6 +421,10 @@ class ApexOptions {
       bar: bar,
       pie: pie,
       stacked: stacked,
+      markers: markers,
+      yFormat: yFormat,
+      xTitle: xTitle,
+      yTitle: yTitle,
       fontFamily: fontFamily ?? this.fontFamily,
     );
   }

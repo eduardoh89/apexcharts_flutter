@@ -69,7 +69,7 @@ class DataLabelsRenderer {
         final double y = layout.yToPixel(p.y) - 8;
         labeller.draw(
           canvas,
-          FormatValue.number(p.y),
+          FormatValue.formatted(p.y, options.yFormat),
           Offset(x, y),
           anchor: TextAnchor.middle,
         );
@@ -100,7 +100,7 @@ class DataLabelsRenderer {
           acc += v;
           labeller.draw(
             canvas,
-            FormatValue.number(v),
+            FormatValue.formatted(v, options.yFormat),
             Offset(cx, yMid),
             anchor: TextAnchor.middle,
             verticalCenter: true,
@@ -126,7 +126,7 @@ class DataLabelsRenderer {
         final top = layout.yToPixel(v) - 8;
         labeller.draw(
           canvas,
-          FormatValue.number(v),
+          FormatValue.formatted(v, options.yFormat),
           Offset(cx, top),
           anchor: TextAnchor.middle,
         );
@@ -162,7 +162,7 @@ class DataLabelsRenderer {
         final endX = valueToX(v) + (v >= 0 ? 6 : -6);
         labeller.draw(
           canvas,
-          FormatValue.number(v),
+          FormatValue.formatted(v, options.yFormat),
           Offset(endX, cy),
           anchor: v >= 0 ? TextAnchor.start : TextAnchor.end,
           verticalCenter: true,

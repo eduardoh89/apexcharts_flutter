@@ -93,11 +93,16 @@ class CartesianLayout {
     }
     final double leftGutter = math.max(_leftGutter, widestLabel + 16);
 
+    // Reserve extra space for axis titles when present (ApexCharts adds ~18px
+    // beyond the tick labels for each axis title).
+    final double yTitlePad = options.yTitle.hasText ? 18 : 0;
+    final double xTitlePad = options.xTitle.hasText ? 18 : 0;
+
     final plotRect = Rect.fromLTRB(
-      leftGutter + legendLeft,
+      leftGutter + legendLeft + yTitlePad,
       _topPadding + legendTop,
       size.width - _rightPadding - legendRight,
-      size.height - _bottomGutter - legendBottom,
+      size.height - _bottomGutter - legendBottom - xTitlePad,
     );
 
     // X extent for datetime/numeric.
