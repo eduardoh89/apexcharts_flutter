@@ -12,6 +12,7 @@ enum ApexChartType {
   scatter,
   bubble,
   rangeBar,
+  candlestick,
   radar,
   radialBar,
   heatmap;
@@ -24,6 +25,8 @@ enum ApexChartType {
         return ApexChartType.bar;
       case 'rangeBar':
         return ApexChartType.rangeBar;
+      case 'candlestick':
+        return ApexChartType.candlestick;
       case 'radar':
         return ApexChartType.radar;
       case 'pie':
@@ -50,7 +53,8 @@ enum ApexChartType {
       this == bar ||
       this == scatter ||
       this == bubble ||
-      this == rangeBar;
+      this == rangeBar ||
+      this == candlestick;
   bool get isRadial => this == pie || this == donut || this == radialBar;
 }
 
@@ -93,6 +97,7 @@ class ApexPoint {
     required this.y,
     this.yHigh,
     this.z,
+    this.ohlc,
     this.label,
     this.isNull = false,
   });
@@ -110,12 +115,17 @@ class ApexPoint {
   /// radius is derived from this. Null for non-bubble points.
   final double? z;
 
+  /// Open-high-low-close values for candlestick points (`y: [o, h, l, c]`).
+  /// Null for non-candlestick points.
+  final List<double>? ohlc;
+
   /// Category/row label carried on the point (timeline `{ x: 'Label', y: [..] }`).
   final String? label;
 
   final bool isNull;
 
   bool get isRange => yHigh != null;
+  bool get isOhlc => ohlc != null;
 }
 
 /// The default ApexCharts color palette ("palette1").
@@ -258,6 +268,25 @@ class ApexRadialBarOptions {
       trackStrokeWidthFraction:
           _parsePercent(track?['strokeWidth']) ?? 0.97,
       dataLabelsShow: value?['show'] as bool? ?? true,
+    );
+  }
+}
+
+/// Candlestick plot options, ported from ApexCharts `settings/Options.js`
+/// `plotOptions.candlestick` (colors.upward '#00B746', downward '#EF403C').
+class ApexCandlestickOptions {
+  const ApexCandlestickOptions({this.upwardColor, this.downwardColor});
+
+  final Color? upwardColor;
+  final Color? downwardColor;
+
+  static ApexCandlestickOptions parse(Map<String, dynamic>? c) {
+    if (c == null) return const ApexCandlestickOptions();
+    final colors = c['colors'] as Map<String, dynamic>?;
+    Color? col(Object? v) => v is String ? ApexColor.fromHex(v) : null;
+    return ApexCandlestickOptions(
+      upwardColor: col(colors?['upward']),
+      downwardColor: col(colors?['downward']),
     );
   }
 }
@@ -592,6 +621,7 @@ class ApexOptions {
     this.bubble = const ApexBubbleOptions(),
     this.radialBar = const ApexRadialBarOptions(),
     this.heatmap = const ApexHeatmapOptions(),
+    this.candlestick = const ApexCandlestickOptions(),
     this.labels = const [],
     this.pieSeries = const [],
     this.stacked = false,
@@ -684,6 +714,7 @@ class ApexOptions {
   final ApexBubbleOptions bubble;
   final ApexRadialBarOptions radialBar;
   final ApexHeatmapOptions heatmap;
+  final ApexCandlestickOptions candlestick;
 
   /// Parse a raw ApexCharts `options` map (the subset apex_dart supports).
   factory ApexOptions.fromJson(Map<String, dynamic> json) {
@@ -732,6 +763,9 @@ class ApexOptions {
     );
     final heatmap = ApexHeatmapOptions.parse(
       plotOptions?['heatmap'] as Map<String, dynamic>?,
+    );
+    final candlestick = ApexCandlestickOptions.parse(
+      plotOptions?['candlestick'] as Map<String, dynamic>?,
     );
 
     final legend = ApexLegend.parse(json['legend'] as Map<String, dynamic>?);
@@ -817,6 +851,7 @@ class ApexOptions {
       bubble: bubble,
       radialBar: radialBar,
       heatmap: heatmap,
+      candlestick: candlestick,
       stacked: stacked,
       markers: markers,
       yFormat: yFormat,
@@ -859,6 +894,7 @@ class ApexOptions {
       bubble: bubble,
       radialBar: radialBar,
       heatmap: heatmap,
+      candlestick: candlestick,
       stacked: stacked,
       markers: markers,
       yFormat: yFormat,
@@ -903,7 +939,22 @@ class ApexOptions {
         final Object? xRaw = d['x'];
         final String? label = xRaw is String ? xRaw : null;
         final double? xNum = xRaw is num ? xRaw.toDouble() : null;
-        if (yv is List && yv.length >= 2 && yv[0] is num && yv[1] is num) {
+        if (yv is List && yv.length >= 4 && yv.every((e) => e is num)) {
+          // candlestick: { x: <time>, y: [open, high, low, close] }.
+          final o = (yv[0] as num).toDouble();
+          final h = (yv[1] as num).toDouble();
+          final l = (yv[2] as num).toDouble();
+          final c = (yv[3] as num).toDouble();
+          points.add(ApexPoint(
+            x: xNum,
+            y: o,
+            ohlc: [o, h, l, c],
+            label: label,
+          ));
+        } else if (yv is List &&
+            yv.length >= 2 &&
+            yv[0] is num &&
+            yv[1] is num) {
           // rangeBar/timeline: { x: <label|value>, y: [start, end] }.
           points.add(ApexPoint(
             x: xNum,

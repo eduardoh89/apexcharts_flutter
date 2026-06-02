@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 
 import 'charts/bar_chart.dart';
+import 'charts/candlestick_chart.dart';
 import 'charts/heatmap_chart.dart';
 import 'charts/line_chart.dart';
 import 'charts/pie_chart.dart';
@@ -508,6 +509,8 @@ class _ApexChartPainter extends CustomPainter {
         _paintCartesian(canvas, size, _CartesianKind.bar);
       case ApexChartType.rangeBar:
         _paintCartesian(canvas, size, _CartesianKind.rangeBar);
+      case ApexChartType.candlestick:
+        _paintCartesian(canvas, size, _CartesianKind.candlestick);
       case ApexChartType.scatter:
       case ApexChartType.bubble:
         _paintCartesian(canvas, size, _CartesianKind.scatter);
@@ -636,6 +639,8 @@ class _ApexChartPainter extends CustomPainter {
         ScatterChartRenderer.paint(canvas, layout, options);
       case _CartesianKind.rangeBar:
         RangeBarChartRenderer.paint(canvas, layout, options);
+      case _CartesianKind.candlestick:
+        CandlestickChartRenderer.paint(canvas, layout, options);
     }
     canvas.restore();
 
@@ -720,4 +725,4 @@ class _ApexChartPainter extends CustomPainter {
       oldDelegate.animation != animation;
 }
 
-enum _CartesianKind { line, bar, scatter, rangeBar }
+enum _CartesianKind { line, bar, scatter, rangeBar, candlestick }

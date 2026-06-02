@@ -188,6 +188,11 @@ class CartesianLayout {
           yLo = math.min(yLo, p.yHigh!);
           yHi = math.max(yHi, p.yHigh!);
         }
+        // Candlestick points span [low, high]; cover the full wick range.
+        if (p.ohlc != null) {
+          yLo = math.min(yLo, p.ohlc![2]); // low
+          yHi = math.max(yHi, p.ohlc![1]); // high
+        }
       }
     }
     if (!yLo.isFinite || !yHi.isFinite) {

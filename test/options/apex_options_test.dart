@@ -85,6 +85,21 @@ void main() {
     });
   });
 
+  group('ApexOptions.fromJson — candlestick', () {
+    test('candlestick_basic parses { x, y:[o,h,l,c] } OHLC points', () {
+      final o = ApexOptions.fromJson(_fixtureOptions('candlestick_basic'));
+      expect(o.type, ApexChartType.candlestick);
+      expect(o.type.isCartesian, isTrue);
+      expect(o.xAxisType, ApexXAxisType.datetime);
+      final first = o.series.first.points.first;
+      expect(first.isOhlc, isTrue);
+      expect(first.ohlc, [51.98, 56.29, 51.59, 53.85]);
+      expect(first.x, 1609459200000);
+      // candlestick default colors (Options.js).
+      expect(o.candlestick.upwardColor, isNull); // not overridden in fixture
+    });
+  });
+
   group('ApexOptions.fromJson — heatmap', () {
     test('heatmap_basic parses series rows + plotOptions.heatmap', () {
       final o = ApexOptions.fromJson(_fixtureOptions('heatmap_basic'));
