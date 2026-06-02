@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'charts/bar_chart.dart';
 import 'charts/line_chart.dart';
 import 'charts/pie_chart.dart';
+import 'charts/radial_bar_chart.dart';
 import 'charts/range_bar_chart.dart';
 import 'charts/scatter_chart.dart';
 import 'interaction/cartesian_hit_tester.dart';
@@ -512,10 +513,29 @@ class _ApexChartPainter extends CustomPainter {
       case ApexChartType.donut:
         _paintPie(canvas, size);
       case ApexChartType.radialBar:
+        _paintRadialBar(canvas, size);
       case ApexChartType.heatmap:
         onLayout(null, size);
         break;
     }
+  }
+
+  void _paintRadialBar(Canvas canvas, Size size) {
+    onLayout(null, size);
+    final double t = progress;
+    if (t < 1) {
+      // Sweep-grow entrance: scale the rings up from the center.
+      final center = Offset(size.width / 2, size.height / 2);
+      canvas.save();
+      canvas.translate(center.dx, center.dy);
+      canvas.scale(t);
+      canvas.translate(-center.dx, -center.dy);
+      RadialBarChartRenderer.paint(canvas, size, options);
+      canvas.restore();
+    } else {
+      RadialBarChartRenderer.paint(canvas, size, options);
+    }
+    LegendRenderer.paint(canvas, size, options);
   }
 
   CartesianLayout _layoutFor(Size size) {

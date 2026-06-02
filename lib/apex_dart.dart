@@ -8,6 +8,7 @@ export 'src/apex_chart.dart';
 export 'src/charts/bar_chart.dart';
 export 'src/charts/line_chart.dart';
 export 'src/charts/pie_chart.dart';
+export 'src/charts/radial_bar_chart.dart';
 export 'src/charts/range_bar_chart.dart';
 export 'src/charts/scatter_chart.dart';
 export 'src/interaction/chart_hit.dart';

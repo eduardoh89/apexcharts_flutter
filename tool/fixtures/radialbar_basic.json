@@ -1,0 +1,18 @@
+{
+  "name": "radialbar_basic",
+  "width": 400,
+  "height": 400,
+  "options": {
+    "chart": { "type": "radialBar", "animations": { "enabled": false }, "toolbar": { "show": false } },
+    "colors": ["#008FFB"],
+    "series": [70],
+    "labels": ["Progress"],
+    "plotOptions": {
+      "radialBar": {
+        "hollow": { "size": "50%" },
+        "track": { "show": true }
+      }
+    },
+    "legend": { "show": false }
+  }
+}

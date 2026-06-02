@@ -212,6 +212,19 @@ class GalleryPage extends StatelessWidget {
           'xaxis': {'type': 'datetime'},
           'legend': {'show': false},
         }),
+        ChartSpec('RadialBar (gauge)', {
+          'chart': {'type': 'radialBar'},
+          'colors': ['#008FFB'],
+          'series': [70],
+          'labels': ['Progress'],
+          'plotOptions': {
+            'radialBar': {
+              'hollow': {'size': '50%'},
+              'track': {'show': true},
+            }
+          },
+          'legend': {'show': false},
+        }),
         ChartSpec('Pie', {
           'chart': {'type': 'pie'},
           'colors': ['#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0'],

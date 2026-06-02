@@ -215,6 +215,50 @@ class ApexPieOptions {
   }
 }
 
+/// RadialBar (circular gauge) plot options, ported from ApexCharts
+/// `settings/Options.js` `plotOptions.radialBar` (startAngle:0, endAngle:360,
+/// hollow.size:'50%', track.show:true, track.margin:5, track.strokeWidth:'97%',
+/// dataLabels.value.show:true).
+class ApexRadialBarOptions {
+  const ApexRadialBarOptions({
+    this.startAngle = 0,
+    this.endAngle = 360,
+    this.hollowSizeFraction = 0.5,
+    this.trackShow = true,
+    this.trackMargin = 5,
+    this.trackStrokeWidthFraction = 0.97,
+    this.dataLabelsShow = true,
+  });
+
+  final num startAngle;
+  final num endAngle;
+
+  /// `hollow.size` as a 0..1 fraction of the outer radius.
+  final double hollowSizeFraction;
+  final bool trackShow;
+  final double trackMargin;
+  final double trackStrokeWidthFraction;
+  final bool dataLabelsShow;
+
+  static ApexRadialBarOptions parse(Map<String, dynamic>? r) {
+    if (r == null) return const ApexRadialBarOptions();
+    final hollow = r['hollow'] as Map<String, dynamic>?;
+    final track = r['track'] as Map<String, dynamic>?;
+    final dataLabels = r['dataLabels'] as Map<String, dynamic>?;
+    final value = dataLabels?['value'] as Map<String, dynamic>?;
+    return ApexRadialBarOptions(
+      startAngle: (r['startAngle'] as num?) ?? 0,
+      endAngle: (r['endAngle'] as num?) ?? 360,
+      hollowSizeFraction: _parsePercent(hollow?['size']) ?? 0.5,
+      trackShow: track?['show'] as bool? ?? true,
+      trackMargin: (track?['margin'] as num?)?.toDouble() ?? 5,
+      trackStrokeWidthFraction:
+          _parsePercent(track?['strokeWidth']) ?? 0.97,
+      dataLabelsShow: value?['show'] as bool? ?? true,
+    );
+  }
+}
+
 /// Bubble-specific plot options, ported from ApexCharts
 /// `settings/Options.js` `plotOptions.bubble` (zScaling:true, min/max radius
 /// undefined by default).
@@ -520,6 +564,7 @@ class ApexOptions {
     this.bar = const ApexBarOptions(),
     this.pie = const ApexPieOptions(),
     this.bubble = const ApexBubbleOptions(),
+    this.radialBar = const ApexRadialBarOptions(),
     this.labels = const [],
     this.pieSeries = const [],
     this.stacked = false,
@@ -610,6 +655,7 @@ class ApexOptions {
   final ApexBarOptions bar;
   final ApexPieOptions pie;
   final ApexBubbleOptions bubble;
+  final ApexRadialBarOptions radialBar;
 
   /// Parse a raw ApexCharts `options` map (the subset apex_dart supports).
   factory ApexOptions.fromJson(Map<String, dynamic> json) {
@@ -652,6 +698,9 @@ class ApexOptions {
     );
     final bubble = ApexBubbleOptions.parse(
       plotOptions?['bubble'] as Map<String, dynamic>?,
+    );
+    final radialBar = ApexRadialBarOptions.parse(
+      plotOptions?['radialBar'] as Map<String, dynamic>?,
     );
 
     final legend = ApexLegend.parse(json['legend'] as Map<String, dynamic>?);
@@ -710,6 +759,7 @@ class ApexOptions {
         dataLabelsEnabled: dataLabelsEnabled,
         legend: legend,
         pie: pie,
+        radialBar: radialBar,
         yFormat: yFormat,
         animations: animations,
         fontFamily: fontFamily,
@@ -734,6 +784,7 @@ class ApexOptions {
       bar: bar,
       pie: pie,
       bubble: bubble,
+      radialBar: radialBar,
       stacked: stacked,
       markers: markers,
       yFormat: yFormat,
@@ -774,6 +825,7 @@ class ApexOptions {
       bar: bar,
       pie: pie,
       bubble: bubble,
+      radialBar: radialBar,
       stacked: stacked,
       markers: markers,
       yFormat: yFormat,

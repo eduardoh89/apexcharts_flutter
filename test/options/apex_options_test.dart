@@ -85,6 +85,23 @@ void main() {
     });
   });
 
+  group('ApexOptions.fromJson — radialBar', () {
+    test('radialbar_basic parses gauge value + plotOptions.radialBar', () {
+      final o = ApexOptions.fromJson(_fixtureOptions('radialbar_basic'));
+      expect(o.type, ApexChartType.radialBar);
+      expect(o.type.isRadial, isTrue);
+      expect(o.pieSeries, [70]);
+      expect(o.labels, ['Progress']);
+      // radialBar defaults (Options.js): startAngle 0, endAngle 360,
+      // hollow.size 50%, track.show true, track.margin 5.
+      expect(o.radialBar.startAngle, 0);
+      expect(o.radialBar.endAngle, 360);
+      expect(o.radialBar.hollowSizeFraction, closeTo(0.5, 1e-9));
+      expect(o.radialBar.trackShow, isTrue);
+      expect(o.radialBar.trackMargin, 5);
+    });
+  });
+
   group('ApexOptions.fromJson — logarithmic axis', () {
     test('line_logarithmic parses yaxis.logarithmic + default base', () {
       final o = ApexOptions.fromJson(_fixtureOptions('line_logarithmic'));
