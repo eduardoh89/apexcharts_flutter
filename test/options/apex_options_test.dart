@@ -84,4 +84,20 @@ void main() {
       expect(o.xMax, 100);
     });
   });
+
+  group('ApexOptions.fromJson — rangeBar/timeline', () {
+    test('rangebar_timeline parses { x, y:[start,end] } range points', () {
+      final o = ApexOptions.fromJson(_fixtureOptions('rangebar_timeline'));
+      expect(o.type, ApexChartType.rangeBar);
+      expect(o.type.isCartesian, isTrue);
+      expect(o.bar.horizontal, isTrue);
+      // barHeight 60% drives the band thickness fraction.
+      expect(o.bar.columnWidthFraction, closeTo(0.6, 1e-9));
+      final first = o.series.first.points.first;
+      expect(first.isRange, isTrue);
+      expect(first.label, 'Design');
+      expect(first.y, 1609459200000);
+      expect(first.yHigh, 1610668800000);
+    });
+  });
 }

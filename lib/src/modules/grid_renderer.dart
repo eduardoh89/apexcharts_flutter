@@ -31,6 +31,14 @@ class GridRenderer {
       fontFamily: options.fontFamily,
     );
 
+    // Range/timeline bars invert the axes: value ticks (often datetime) run
+    // along X at the bottom, row labels run down the Y axis.
+    if (options.type == ApexChartType.rangeBar) {
+      _paintRangeBarGrid(canvas, layout, options, gridPaint, labeller);
+      _paintAxisTitles(canvas, layout, options);
+      return;
+    }
+
     // Horizontal gridlines + y labels at each tick.
     for (final tick in layout.yTicks) {
       final y = layout.yToPixel(tick);
@@ -55,6 +63,73 @@ class GridRenderer {
 
     _paintXLabels(canvas, layout, options, labeller);
     _paintAxisTitles(canvas, layout, options);
+  }
+
+  /// Range/timeline grid: vertical value gridlines + X labels along the bottom
+  /// (datetime-formatted when the value axis is datetime), and one row label
+  /// per data point down the Y axis (`RangeBar` swaps the axes vs. a column).
+  static void _paintRangeBarGrid(
+    Canvas canvas,
+    CartesianLayout layout,
+    ApexOptions options,
+    Paint gridPaint,
+    TextDrawer labeller,
+  ) {
+    final double span =
+        (layout.yMax - layout.yMin) == 0 ? 1 : layout.yMax - layout.yMin;
+    double valueToX(num v) =>
+        layout.plotRect.left + ((v - layout.yMin) / span) * layout.plotRect.width;
+
+    final double labelY = layout.plotRect.bottom + 8;
+    final bool datetime = options.xAxisType == ApexXAxisType.datetime;
+
+    if (datetime) {
+      final ticks = TimeScale.ticks(
+        layout.yMin,
+        layout.yMax,
+        tickAmount: options.tickAmount,
+        gridWidth: layout.plotRect.width,
+      );
+      for (final tick in ticks) {
+        final x = valueToX(tick.ms);
+        if (x < layout.plotRect.left - 1 || x > layout.plotRect.right + 1) {
+          continue;
+        }
+        canvas.drawLine(Offset(x, layout.plotRect.top),
+            Offset(x, layout.plotRect.bottom), gridPaint);
+        labeller.draw(canvas, tick.label, Offset(x, labelY),
+            anchor: TextAnchor.middle);
+      }
+    } else {
+      for (final tick in layout.yTicks) {
+        final x = valueToX(tick);
+        canvas.drawLine(Offset(x, layout.plotRect.top),
+            Offset(x, layout.plotRect.bottom), gridPaint);
+        labeller.draw(canvas, _fmtNum(tick), Offset(x, labelY),
+            anchor: TextAnchor.middle);
+      }
+    }
+
+    // Row labels down the Y axis: one per data point, taken from the point's
+    // carried label (timeline `{ x: 'Task' }`) or the configured categories.
+    final int n = layout.pointCount;
+    final double yDivision = n > 0 ? layout.plotRect.height / n : 0;
+    final series = options.series.isNotEmpty ? options.series.first : null;
+    for (int j = 0; j < n; j++) {
+      String? label;
+      if (series != null && j < series.points.length) {
+        label = series.points[j].label;
+      }
+      label ??= j < layout.xCategories.length ? layout.xCategories[j] : '';
+      final double cy = layout.plotRect.top + (j + 0.5) * yDivision;
+      labeller.draw(
+        canvas,
+        label,
+        Offset(layout.plotRect.left - 10, cy),
+        anchor: TextAnchor.end,
+        verticalCenter: true,
+      );
+    }
   }
 
   static void _paintAxisTitles(

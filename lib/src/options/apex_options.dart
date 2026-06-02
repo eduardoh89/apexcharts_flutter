@@ -11,6 +11,7 @@ enum ApexChartType {
   donut,
   scatter,
   bubble,
+  rangeBar,
   radialBar,
   heatmap;
 
@@ -20,6 +21,8 @@ enum ApexChartType {
         return ApexChartType.area;
       case 'bar':
         return ApexChartType.bar;
+      case 'rangeBar':
+        return ApexChartType.rangeBar;
       case 'pie':
         return ApexChartType.pie;
       case 'donut':
@@ -43,7 +46,8 @@ enum ApexChartType {
       this == area ||
       this == bar ||
       this == scatter ||
-      this == bubble;
+      this == bubble ||
+      this == rangeBar;
   bool get isRadial => this == pie || this == donut || this == radialBar;
 }
 
@@ -81,14 +85,34 @@ class ApexSeries {
 /// [isNull] marks a missing value (ApexCharts `null` data point) so line/area
 /// renderers break the path into segments instead of drawing through it.
 class ApexPoint {
-  const ApexPoint({this.x, required this.y, this.z, this.isNull = false});
+  const ApexPoint({
+    this.x,
+    required this.y,
+    this.yHigh,
+    this.z,
+    this.label,
+    this.isNull = false,
+  });
   final double? x;
+
+  /// For plain points the value; for range/timeline points the **start** of the
+  /// range (low), with [yHigh] the end (high).
   final double y;
+
+  /// Range end for rangeBar/timeline points (`y: [start, end]`). Null for
+  /// non-range points.
+  final double? yHigh;
 
   /// Third dimension for bubble charts (`[x, y, z]` / `{x, y, z}`); the bubble
   /// radius is derived from this. Null for non-bubble points.
   final double? z;
+
+  /// Category/row label carried on the point (timeline `{ x: 'Label', y: [..] }`).
+  final String? label;
+
   final bool isNull;
+
+  bool get isRange => yHigh != null;
 }
 
 /// The default ApexCharts color palette ("palette1").
@@ -143,15 +167,21 @@ class ApexBarOptions {
 
   final bool horizontal;
 
-  /// Fraction (0..1) of the category slot occupied by the bar group.
+  /// Fraction (0..1) of the category slot occupied by the bar group. For
+  /// vertical bars this comes from `bar.columnWidth`; for horizontal/range bars
+  /// from `bar.barHeight` (ApexCharts uses the orientation-appropriate one).
   final double columnWidthFraction;
   final double borderRadius;
 
   static ApexBarOptions parse(Map<String, dynamic>? bar) {
     if (bar == null) return const ApexBarOptions();
+    final horizontal = bar['horizontal'] as bool? ?? false;
+    final thickness = horizontal
+        ? (_parsePercent(bar['barHeight']) ?? _parsePercent(bar['columnWidth']))
+        : (_parsePercent(bar['columnWidth']) ?? _parsePercent(bar['barHeight']));
     return ApexBarOptions(
-      horizontal: bar['horizontal'] as bool? ?? false,
-      columnWidthFraction: _parsePercent(bar['columnWidth']) ?? 0.7,
+      horizontal: horizontal,
+      columnWidthFraction: thickness ?? 0.7,
       borderRadius: (bar['borderRadius'] as num?)?.toDouble() ?? 0,
     );
   }
@@ -757,13 +787,27 @@ class ApexOptions {
           isNull: yv is! num,
         ));
       } else if (d is Map) {
-        final yv = d['y'];
-        points.add(ApexPoint(
-          x: (d['x'] as num?)?.toDouble(),
-          y: yv is num ? yv.toDouble() : 0,
-          z: (d['z'] as num?)?.toDouble(),
-          isNull: yv is! num,
-        ));
+        final Object? yv = d['y'];
+        final Object? xRaw = d['x'];
+        final String? label = xRaw is String ? xRaw : null;
+        final double? xNum = xRaw is num ? xRaw.toDouble() : null;
+        if (yv is List && yv.length >= 2 && yv[0] is num && yv[1] is num) {
+          // rangeBar/timeline: { x: <label|value>, y: [start, end] }.
+          points.add(ApexPoint(
+            x: xNum,
+            y: (yv[0] as num).toDouble(),
+            yHigh: (yv[1] as num).toDouble(),
+            label: label,
+          ));
+        } else {
+          points.add(ApexPoint(
+            x: xNum,
+            y: yv is num ? yv.toDouble() : 0,
+            z: (d['z'] as num?)?.toDouble(),
+            label: label,
+            isNull: yv is! num,
+          ));
+        }
       } else if (d is num) {
         points.add(ApexPoint(x: null, y: d.toDouble()));
       } else {

@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'charts/bar_chart.dart';
 import 'charts/line_chart.dart';
 import 'charts/pie_chart.dart';
+import 'charts/range_bar_chart.dart';
 import 'charts/scatter_chart.dart';
 import 'interaction/cartesian_hit_tester.dart';
 import 'interaction/chart_hit.dart';
@@ -502,6 +503,8 @@ class _ApexChartPainter extends CustomPainter {
         _paintCartesian(canvas, size, _CartesianKind.line);
       case ApexChartType.bar:
         _paintCartesian(canvas, size, _CartesianKind.bar);
+      case ApexChartType.rangeBar:
+        _paintCartesian(canvas, size, _CartesianKind.rangeBar);
       case ApexChartType.scatter:
       case ApexChartType.bubble:
         _paintCartesian(canvas, size, _CartesianKind.scatter);
@@ -570,6 +573,14 @@ class _ApexChartPainter extends CustomPainter {
       canvas.translate(0, -baseY);
     }
 
+    // Range/timeline bars grow horizontally from the plot's left edge.
+    if (kind == _CartesianKind.rangeBar && t < 1) {
+      final baseX = layout.plotRect.left;
+      canvas.translate(baseX, 0);
+      canvas.scale(t, 1);
+      canvas.translate(-baseX, 0);
+    }
+
     switch (kind) {
       case _CartesianKind.line:
         LineChartRenderer.paint(canvas, layout, options);
@@ -577,6 +588,8 @@ class _ApexChartPainter extends CustomPainter {
         BarChartRenderer.paint(canvas, layout, options);
       case _CartesianKind.scatter:
         ScatterChartRenderer.paint(canvas, layout, options);
+      case _CartesianKind.rangeBar:
+        RangeBarChartRenderer.paint(canvas, layout, options);
     }
     canvas.restore();
 
@@ -661,4 +674,4 @@ class _ApexChartPainter extends CustomPainter {
       oldDelegate.animation != animation;
 }
 
-enum _CartesianKind { line, bar, scatter }
+enum _CartesianKind { line, bar, scatter, rangeBar }

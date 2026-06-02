@@ -126,10 +126,16 @@ class CartesianLayout {
 
     double domainMin;
     double domainMax;
+    // rangeBar/timeline swaps the axes: each point is a ROW (index-based on the
+    // category axis) and the datetime/value span lives on the value axis, so it
+    // is treated index-based here regardless of the configured xaxis type.
+    final bool indexDomain = options.type == ApexChartType.rangeBar ||
+        options.xAxisType == ApexXAxisType.category;
     // datetime and numeric x-axes map by the real x value (epoch ms or a plain
     // number, e.g. scatter/bubble); category maps by point index.
-    if (options.xAxisType == ApexXAxisType.datetime ||
-        options.xAxisType == ApexXAxisType.numeric) {
+    if (!indexDomain &&
+        (options.xAxisType == ApexXAxisType.datetime ||
+            options.xAxisType == ApexXAxisType.numeric)) {
       double lo = double.infinity, hi = -double.infinity;
       for (final s in options.series) {
         for (final p in s.points) {
@@ -161,13 +167,19 @@ class CartesianLayout {
       for (int i = 0; i < s.points.length; i++) {
         final p = s.points[i];
         if (p.isNull) continue;
-        final double xDomain = (options.xAxisType == ApexXAxisType.datetime ||
-                options.xAxisType == ApexXAxisType.numeric)
+        final double xDomain = (!indexDomain &&
+                (options.xAxisType == ApexXAxisType.datetime ||
+                    options.xAxisType == ApexXAxisType.numeric))
             ? (p.x ?? 0)
             : i.toDouble();
         if (xDomain < view.min - 1e-9 || xDomain > view.max + 1e-9) continue;
         yLo = math.min(yLo, p.y);
         yHi = math.max(yHi, p.y);
+        // Range/timeline points span [y, yHigh]; the value axis must cover both.
+        if (p.yHigh != null) {
+          yLo = math.min(yLo, p.yHigh!);
+          yHi = math.max(yHi, p.yHigh!);
+        }
       }
     }
     if (!yLo.isFinite || !yHi.isFinite) {
@@ -175,7 +187,8 @@ class CartesianLayout {
       yHi = 1;
     }
 
-    // For bar charts ApexCharts always includes the zero baseline.
+    // For bar charts ApexCharts always includes the zero baseline (but not for
+    // range/timeline bars, whose value axis is the start..end span).
     if (options.type == ApexChartType.bar) {
       yLo = math.min(yLo, 0);
       yHi = math.max(yHi, 0);
@@ -183,13 +196,36 @@ class CartesianLayout {
 
     // maxTicks from height, matching Scales.niceScale: (svgHeight-100)/15.
     final double maxTicks = math.max((size.height - 100) / 15, 2);
-    final scale = NiceScale.niceScale(yLo, yHi, maxTicks: maxTicks);
+    // Range/timeline bars put a (frequently datetime) value axis on X with row
+    // labels on Y. NiceScale on raw epoch-ms collapses (the span is tiny next
+    // to the absolute magnitude), so use the raw value extent with its own
+    // tick labels (drawn by the rangeBar grid branch).
+    final bool rangeAxis = options.type == ApexChartType.rangeBar;
+    final scale = rangeAxis
+        ? null
+        : NiceScale.niceScale(yLo, yHi, maxTicks: maxTicks);
+    final double resolvedYMin = scale?.niceMin.toDouble() ?? yLo;
+    final double resolvedYMax = scale?.niceMax.toDouble() ?? yHi;
+    final List<num> resolvedTicks = scale?.result ?? const [];
 
     // Reserve gutter width based on the widest y label.
     final labeller = TextDrawer(fontFamily: options.fontFamily);
     double widestLabel = 0;
-    for (final t in scale.result) {
-      widestLabel = math.max(widestLabel, labeller.measure(_fmt(t)).width);
+    if (rangeAxis) {
+      // Row labels live on Y for timelines; reserve based on the widest of them.
+      final firstSeries = options.series.isNotEmpty ? options.series.first : null;
+      for (int j = 0; j < maxPoints; j++) {
+        String label = '';
+        if (firstSeries != null && j < firstSeries.points.length) {
+          label = firstSeries.points[j].label ??
+              (j < options.categories.length ? options.categories[j] : '');
+        }
+        widestLabel = math.max(widestLabel, labeller.measure(label).width);
+      }
+    } else {
+      for (final t in resolvedTicks) {
+        widestLabel = math.max(widestLabel, labeller.measure(_fmt(t)).width);
+      }
     }
     final double leftGutter = math.max(_leftGutter, widestLabel + 16);
 
@@ -207,9 +243,9 @@ class CartesianLayout {
 
     return CartesianLayout._(
       plotRect: plotRect,
-      yTicks: scale.result,
-      yMin: scale.niceMin.toDouble(),
-      yMax: scale.niceMax.toDouble(),
+      yTicks: resolvedTicks,
+      yMin: resolvedYMin,
+      yMax: resolvedYMax,
       pointCount: maxPoints,
       xCategories: options.categories,
       xAxisType: options.xAxisType,

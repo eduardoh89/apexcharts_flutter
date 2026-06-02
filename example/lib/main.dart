@@ -191,6 +191,27 @@ class GalleryPage extends StatelessWidget {
           'yaxis': {'max': 80},
           'legend': {'show': false},
         }),
+        ChartSpec('Timeline (rangeBar)', {
+          'chart': {'type': 'rangeBar'},
+          'plotOptions': {
+            'bar': {'horizontal': true, 'barHeight': '60%'}
+          },
+          'dataLabels': {'enabled': false},
+          'colors': ['#008FFB'],
+          'series': [
+            {
+              'name': 'Tasks',
+              'data': [
+                {'x': 'Design', 'y': [1609459200000, 1610668800000]},
+                {'x': 'Build', 'y': [1610668800000, 1612483200000]},
+                {'x': 'Test', 'y': [1612483200000, 1613692800000]},
+                {'x': 'Deploy', 'y': [1613692800000, 1614297600000]},
+              ],
+            }
+          ],
+          'xaxis': {'type': 'datetime'},
+          'legend': {'show': false},
+        }),
         ChartSpec('Pie', {
           'chart': {'type': 'pie'},
           'colors': ['#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0'],
