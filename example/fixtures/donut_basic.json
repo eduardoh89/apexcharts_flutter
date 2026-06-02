@@ -1,0 +1,14 @@
+{
+  "name": "donut_basic",
+  "width": 420,
+  "height": 360,
+  "options": {
+    "chart": { "type": "donut", "animations": { "enabled": false }, "toolbar": { "show": false } },
+    "colors": ["#008FFB", "#00E396", "#FEB019", "#FF4560"],
+    "series": [44, 55, 41, 17],
+    "labels": ["Comedy", "Action", "SciFi", "Drama"],
+    "plotOptions": { "pie": { "donut": { "size": "65%" } } },
+    "legend": { "position": "right" },
+    "dataLabels": { "enabled": true }
+  }
+}

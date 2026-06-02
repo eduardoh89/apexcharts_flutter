@@ -1,0 +1,27 @@
+# Dart/Flutter
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+
+# Vendored upstream reference: kept locally for porting traceability, but NOT
+# committed (19MB upstream tree). The exact tag + commit SHA are recorded in
+# NOTICE so it can be re-cloned deterministically:
+#   git clone --branch v4.7.0 https://github.com/apexcharts/apexcharts.js \
+#     apex_dart/reference/apexcharts-4.7.0-src
+reference/
+
+# Test harness
+tool/node_modules/
+test/golden/**/diff_*.png
+test/golden/failures/
+
+# Example app font is a copy of test/assets/fonts/Inter-Variable.ttf — not
+# committed twice. Re-create with:
+#   cp test/assets/fonts/Inter-Variable.ttf example/fonts/
+example/fonts/
+
+# OS
+.DS_Store

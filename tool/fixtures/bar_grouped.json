@@ -1,0 +1,16 @@
+{
+  "name": "bar_grouped",
+  "width": 600,
+  "height": 360,
+  "options": {
+    "chart": { "type": "bar", "animations": { "enabled": false }, "toolbar": { "show": false } },
+    "plotOptions": { "bar": { "horizontal": false, "columnWidth": "70%" } },
+    "colors": ["#008FFB", "#00E396"],
+    "series": [
+      { "name": "2023", "data": [44, 55, 57, 56, 61, 58] },
+      { "name": "2024", "data": [76, 85, 101, 98, 87, 105] }
+    ],
+    "xaxis": { "categories": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"] },
+    "dataLabels": { "enabled": false }
+  }
+}

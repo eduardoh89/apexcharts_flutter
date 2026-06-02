@@ -1,0 +1,22 @@
+name: apex_dart
+description: >-
+  Native Flutter/Dart port of ApexCharts v4.7.0 (last MIT release). A
+  CustomPainter-based charting engine that runs on macOS, web, Android,
+  Windows and iOS without any JS/WebView dependency.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: '>=3.6.0 <4.0.0'
+  flutter: '>=3.24.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:

@@ -1,0 +1,14 @@
+{
+  "name": "apex_dart-reference-harness",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Renders ApexCharts v4.7.0 fixtures to reference PNGs for the apex_dart visual-diff harness.",
+  "scripts": {
+    "render": "node render_reference.mjs"
+  },
+  "dependencies": {
+    "apexcharts": "4.7.0",
+    "puppeteer": "^23.0.0"
+  }
+}

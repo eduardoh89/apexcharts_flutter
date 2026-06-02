@@ -1,0 +1,27 @@
+{
+  "name": "line_timeseries",
+  "width": 600,
+  "height": 360,
+  "options": {
+    "chart": { "type": "line", "animations": { "enabled": false }, "toolbar": { "show": false } },
+    "stroke": { "curve": "smooth", "width": 3 },
+    "colors": ["#775DD0"],
+    "series": [
+      {
+        "name": "Visitors",
+        "data": [
+          [1704067200000, 30],
+          [1704153600000, 40],
+          [1704240000000, 35],
+          [1704326400000, 50],
+          [1704412800000, 49],
+          [1704499200000, 60],
+          [1704585600000, 70],
+          [1704672000000, 91]
+        ]
+      }
+    ],
+    "xaxis": { "type": "datetime" },
+    "dataLabels": { "enabled": false }
+  }
+}

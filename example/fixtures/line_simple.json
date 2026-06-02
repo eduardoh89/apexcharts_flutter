@@ -1,0 +1,15 @@
+{
+  "name": "line_simple",
+  "width": 600,
+  "height": 360,
+  "options": {
+    "chart": { "type": "line", "animations": { "enabled": false }, "toolbar": { "show": false } },
+    "stroke": { "curve": "straight", "width": 3 },
+    "colors": ["#008FFB"],
+    "series": [
+      { "name": "Sales", "data": [10, 41, 35, 51, 49, 62, 69, 91, 148] }
+    ],
+    "xaxis": { "categories": [1, 2, 3, 4, 5, 6, 7, 8, 9] },
+    "dataLabels": { "enabled": false }
+  }
+}

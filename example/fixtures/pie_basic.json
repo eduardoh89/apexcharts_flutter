@@ -1,0 +1,13 @@
+{
+  "name": "pie_basic",
+  "width": 420,
+  "height": 360,
+  "options": {
+    "chart": { "type": "pie", "animations": { "enabled": false }, "toolbar": { "show": false } },
+    "colors": ["#008FFB", "#00E396", "#FEB019", "#FF4560", "#775DD0"],
+    "series": [44, 55, 13, 43, 22],
+    "labels": ["Team A", "Team B", "Team C", "Team D", "Team E"],
+    "legend": { "position": "right" },
+    "dataLabels": { "enabled": true }
+  }
+}

@@ -1,0 +1,27 @@
+apex_dart
+=========
+
+This package is a native Flutter/Dart port (a manual reimplementation, not a
+machine translation) of ApexCharts.js.
+
+Upstream project : ApexCharts.js
+Upstream repo    : https://github.com/apexcharts/apexcharts.js
+Ported version   : v4.7.0  (the LAST release published under the MIT license)
+Ported git tag   : v4.7.0
+Ported commit SHA : 1e93a0d47b834111cf616fb6c78a263bbae7c1d8
+Upstream license  : MIT (see LICENSE in this directory, copied verbatim from the
+                    v4.7.0 tag)
+
+IMPORTANT LICENSING NOTE
+------------------------
+Starting with ApexCharts v5 (June 2025) the project moved to a dual-license
+model (Community + Commercial) that is NOT the MIT license. This port is based
+EXCLUSIVELY on the v4.7.0 source tree, which is MIT-licensed. No code from
+v5.0.0 or later has been used.
+
+The original MIT copyright notice (Copyright (c) 2018 ApexCharts) is retained
+in the LICENSE file as required by the MIT license.
+
+The pristine upstream source used as the porting reference is vendored under
+  reference/apexcharts-4.7.0-src/
+for traceability. It is excluded from the published package.

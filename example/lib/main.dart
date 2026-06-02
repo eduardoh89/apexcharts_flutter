@@ -1,0 +1,236 @@
+import 'package:apex_dart/apex_dart.dart';
+import 'package:flutter/material.dart';
+
+void main() => runApp(const GalleryApp());
+
+/// A gallery that renders every apex_dart chart type so the port can be
+/// eyeballed on any platform (macOS / web / Android / Windows).
+class GalleryApp extends StatelessWidget {
+  const GalleryApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'apex_dart gallery',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        fontFamily: 'Inter',
+        scaffoldBackgroundColor: const Color(0xFFF4F6F9),
+      ),
+      home: const GalleryPage(),
+    );
+  }
+}
+
+class ChartSpec {
+  const ChartSpec(this.title, this.json);
+  final String title;
+  final Map<String, dynamic> json;
+}
+
+class GalleryPage extends StatelessWidget {
+  const GalleryPage({super.key});
+
+  List<ChartSpec> get _specs => [
+        ChartSpec('Line — simple', {
+          'chart': {'type': 'line'},
+          'stroke': {'curve': 'straight', 'width': 3},
+          'colors': ['#008FFB'],
+          'series': [
+            {'name': 'Sales', 'data': [10, 41, 35, 51, 49, 62, 69, 91, 148]}
+          ],
+          'xaxis': {'categories': [1, 2, 3, 4, 5, 6, 7, 8, 9]},
+          'dataLabels': {'enabled': false},
+        }),
+        ChartSpec('Line — multi-series', {
+          'chart': {'type': 'line'},
+          'stroke': {'curve': 'straight', 'width': 3},
+          'colors': ['#008FFB', '#00E396', '#FEB019'],
+          'series': [
+            {'name': 'Team A', 'data': [31, 40, 28, 51, 42, 109, 100]},
+            {'name': 'Team B', 'data': [11, 32, 45, 32, 34, 52, 41]},
+            {'name': 'Team C', 'data': [15, 11, 32, 18, 9, 24, 11]},
+          ],
+          'xaxis': {
+            'categories': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+          },
+        }),
+        ChartSpec('Line — smooth (datetime)', {
+          'chart': {'type': 'line'},
+          'stroke': {'curve': 'smooth', 'width': 3},
+          'colors': ['#775DD0'],
+          'series': [
+            {
+              'name': 'Visitors',
+              'data': [
+                [1704067200000, 30],
+                [1704153600000, 40],
+                [1704240000000, 35],
+                [1704326400000, 50],
+                [1704412800000, 49],
+                [1704499200000, 60],
+                [1704585600000, 70],
+                [1704672000000, 91],
+              ],
+            }
+          ],
+          'xaxis': {'type': 'datetime'},
+        }),
+        ChartSpec('Area — with data labels', {
+          'chart': {'type': 'area'},
+          'stroke': {'curve': 'smooth', 'width': 2},
+          'colors': ['#00E396'],
+          'series': [
+            {'name': 'Revenue', 'data': [12, 18, 14, 26, 31, 28, 40, 52]}
+          ],
+          'xaxis': {
+            'categories': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug']
+          },
+          'dataLabels': {'enabled': true},
+        }),
+        ChartSpec('Bar — grouped (data labels)', {
+          'chart': {'type': 'bar'},
+          'plotOptions': {
+            'bar': {'horizontal': false, 'columnWidth': '70%'}
+          },
+          'colors': ['#008FFB', '#00E396'],
+          'series': [
+            {'name': '2023', 'data': [44, 55, 57, 56, 61, 58]},
+            {'name': '2024', 'data': [76, 85, 101, 98, 87, 105]},
+          ],
+          'xaxis': {
+            'categories': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+          },
+          'dataLabels': {'enabled': true},
+        }),
+        ChartSpec('Bar — stacked', {
+          'chart': {'type': 'bar', 'stacked': true},
+          'plotOptions': {
+            'bar': {'horizontal': false, 'columnWidth': '60%'}
+          },
+          'colors': ['#008FFB', '#00E396', '#FEB019'],
+          'series': [
+            {'name': 'Q1', 'data': [20, 30, 25, 40, 32, 28]},
+            {'name': 'Q2', 'data': [15, 25, 20, 18, 22, 30]},
+            {'name': 'Q3', 'data': [10, 12, 18, 22, 15, 20]},
+          ],
+          'xaxis': {
+            'categories': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+          },
+        }),
+        ChartSpec('Bar — horizontal', {
+          'chart': {'type': 'bar'},
+          'plotOptions': {
+            'bar': {'horizontal': true, 'columnWidth': '70%'}
+          },
+          'colors': ['#FF4560'],
+          'series': [
+            {'name': 'Score', 'data': [44, 55, 41, 67, 22, 43]}
+          ],
+          'xaxis': {
+            'categories': ['A', 'B', 'C', 'D', 'E', 'F']
+          },
+        }),
+        ChartSpec('Scatter', {
+          'chart': {'type': 'scatter'},
+          'colors': ['#008FFB', '#FF4560'],
+          'series': [
+            {
+              'name': 'Sample A',
+              'data': [
+                [10, 21], [22, 35], [33, 28], [45, 50], [58, 41], [70, 63]
+              ],
+            },
+            {
+              'name': 'Sample B',
+              'data': [
+                [12, 11], [25, 18], [38, 25], [50, 20], [62, 33], [75, 28]
+              ],
+            },
+          ],
+          'xaxis': {'type': 'numeric'},
+        }),
+        ChartSpec('Pie', {
+          'chart': {'type': 'pie'},
+          'colors': ['#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0'],
+          'series': [44, 55, 13, 43, 22],
+          'labels': ['Team A', 'Team B', 'Team C', 'Team D', 'Team E'],
+          'legend': {'position': 'right'},
+          'dataLabels': {'enabled': true},
+        }),
+        ChartSpec('Donut', {
+          'chart': {'type': 'donut'},
+          'colors': ['#008FFB', '#00E396', '#FEB019', '#FF4560'],
+          'series': [44, 55, 41, 17],
+          'labels': ['Comedy', 'Action', 'SciFi', 'Drama'],
+          'plotOptions': {
+            'pie': {
+              'donut': {'size': '65%'}
+            }
+          },
+          'legend': {'position': 'right'},
+          'dataLabels': {'enabled': true},
+        }),
+      ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'apex_dart — ApexCharts v4.7.0 native port  ·  hover any chart for tooltips',
+        ),
+        backgroundColor: const Color(0xFF008FFB),
+        foregroundColor: Colors.white,
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final crossAxis = constraints.maxWidth > 1100
+              ? 2
+              : 1;
+          return GridView.count(
+            crossAxisCount: crossAxis,
+            childAspectRatio: 1.7,
+            padding: const EdgeInsets.all(16),
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            children: [
+              for (final spec in _specs)
+                Card(
+                  elevation: 1,
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          spec.title,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                            color: Color(0xFF373D3F),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Expanded(
+                          child: ApexChart(
+                            options: ApexOptions.fromJson(spec.json)
+                                .copyWith(fontFamily: 'Inter'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
