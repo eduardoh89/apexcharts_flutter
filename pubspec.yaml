@@ -20,15 +20,15 @@ screenshots:
     path: doc/screenshots/area.png
   - description: Grouped bar chart with data labels
     path: doc/screenshots/bar.png
-  - description: Pie chart
+  - description: Pie chart with side legend
     path: doc/screenshots/pie.png
   - description: Radar (spider) chart
     path: doc/screenshots/radar.png
   - description: Candlestick / OHLC chart
     path: doc/screenshots/candlestick.png
-  - description: Heatmap
+  - description: Heatmap with shaded cells
     path: doc/screenshots/heatmap.png
-  - description: Treemap
+  - description: Treemap (squarified layout)
     path: doc/screenshots/treemap.png
 
 environment:
