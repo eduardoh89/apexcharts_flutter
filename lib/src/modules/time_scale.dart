@@ -20,6 +20,9 @@ class TimeTick {
 /// The tick interval bucket, mirroring `TimeScale.determineInterval`.
 enum _TickUnit { years, months, days, hours, minutes, seconds }
 
+/// Calendar-aligned datetime axis ticks and labels, ported from ApexCharts
+/// `TimeScale.js`. Picks a sensible unit (years / months / days / hours / …)
+/// for the visible span and formats each tick accordingly.
 class TimeScale {
   const TimeScale._();
 

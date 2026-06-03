@@ -7,6 +7,10 @@ A **native Flutter/Dart port of [ApexCharts](https://github.com/apexcharts/apexc
 Flutter platform — Android, iOS, web, Windows, macOS and Linux** — with **no
 WebView, no JS engine, and zero runtime dependencies**.
 
+> 🚧 **Early preview (0.1.0).** The chart rendering is solid and tested, but the
+> public API may still change before 1.0. Pin a version and check the
+> [CHANGELOG](CHANGELOG.md) when upgrading.
+
 > ⚠️ **Unofficial.** This is an independent, community port. It is **not**
 > affiliated with or endorsed by the ApexCharts project. It is based
 > **exclusively** on ApexCharts v4.7.0 (MIT); v5+ moved to a non-MIT license
@@ -87,8 +91,43 @@ class Demo extends StatelessWidget {
 }
 ```
 
+`ApexChart.fromJson({...})` is a shorthand if you'd rather pass the options map
+directly.
+
+### Programmatic zoom (controller)
+
+Attach an `ApexChartController` to drive zoom imperatively — the analogue of
+ApexCharts' `chart.zoomX(...)` / `resetZoom()`:
+
+```dart
+final controller = ApexChartController();
+
+ApexChart(
+  controller: controller,
+  options: ApexOptions.fromJson({
+    'chart': {'type': 'area', 'zoom': {'enabled': true}},
+    'series': [/* ... */],
+    'xaxis': {'type': 'datetime'},
+  }),
+);
+
+// later, e.g. from a button:
+controller.zoomX(startEpochMs, endEpochMs); // datetime: epoch ms; else index
+controller.resetZoom();
+```
+
+On line/area/scatter charts users can also drag-select a range to zoom,
+mouse-wheel to zoom about the cursor, and pan — no controller required.
+
+### Chart types
+
+`line`, `area`, `bar` (grouped / stacked / horizontal), `pie`, `donut`,
+`scatter`, `bubble`, `rangeBar` (timeline), `candlestick`, `radar`,
+`radialBar` (gauge), `heatmap`, `treemap` — selected via `chart.type`, exactly
+like ApexCharts.
+
 See [`example/`](example/) for a gallery covering every chart type, zoom/pan,
-and a datetime area demo.
+and a datetime area demo. Or try the [live demo](https://eduardoh89.github.io/apexcharts_flutter/).
 
 ## Why a port and not a wrapper?
 

@@ -148,6 +148,8 @@ const List<String> kApexDefaultPalette = [
 /// Legend placement.
 enum ApexLegendPosition { top, right, bottom, left, none }
 
+/// Legend configuration (`legend`), mirroring the subset of ApexCharts'
+/// `legend` options apex_dart honors: placement and single-series visibility.
 class ApexLegend {
   const ApexLegend({
     this.position = ApexLegendPosition.bottom,

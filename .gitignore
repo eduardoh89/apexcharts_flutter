@@ -10,8 +10,10 @@ pubspec.lock
 # committed (19MB upstream tree). The exact tag + commit SHA are recorded in
 # NOTICE so it can be re-cloned deterministically:
 #   git clone --branch v4.7.0 https://github.com/apexcharts/apexcharts.js \
-#     apex_dart/reference/apexcharts-4.7.0-src
-reference/
+#     reference/apexcharts-4.7.0-src
+# Anchored to the repo root so it does NOT match test/golden/reference/ (the
+# committed ApexCharts ground-truth PNGs that the golden tests diff against).
+/reference/
 
 # Test harness
 tool/node_modules/

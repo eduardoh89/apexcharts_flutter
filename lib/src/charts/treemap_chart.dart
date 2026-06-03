@@ -32,6 +32,8 @@ class TreemapTile {
   final int dataPointIndex;
 }
 
+/// Paints a squarified treemap and exposes its tile geometry via [tiles] for
+/// hit-testing. Ported from ApexCharts `Treemap.js` + `Treemap-squared.js`.
 class TreemapChartRenderer {
   const TreemapChartRenderer._();
 

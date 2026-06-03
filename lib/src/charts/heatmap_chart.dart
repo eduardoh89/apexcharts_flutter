@@ -39,6 +39,9 @@ class HeatMapCell {
   final double value;
 }
 
+/// Paints a heatmap grid (one column per category, one row per series) and
+/// exposes its cell geometry via [cells] for hit-testing. Ported from
+/// ApexCharts `HeatMap.js` + the treemap shade helpers.
 class HeatMapChartRenderer {
   const HeatMapChartRenderer._();
 
