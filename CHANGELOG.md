@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.1
+
+- Fix a freeze on repeated zoom for charts with `zoom.autoScaleYaxis` (e.g. the
+  area-datetime demo): `getGCD`/`mod` now match ApexCharts' precision-capped
+  scaling (`p = 7`), so FP-dirty axis ranges no longer make `niceScale` stall
+  for seconds. Worst case dropped from ~35s to <2ms per call.
+- Add chart screenshots (README gallery + pub.dev screenshots carousel).
+- Example gallery: the interactive area-datetime zoom/pan demo is now a card on
+  the main page instead of a separate route.
+
 ## 0.1.0
 
 Initial release — a native Flutter/Dart port of ApexCharts v4.7.0 (the last MIT

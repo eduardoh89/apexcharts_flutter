@@ -23,6 +23,24 @@ Pages:
 
 **https://eduardoh89.github.io/apexcharts_flutter/**
 
+## Gallery
+
+All rendered natively by `apexcharts_flutter` (no WebView):
+
+| | |
+|:-:|:-:|
+| ![Line](doc/screenshots/line.png) | ![Area](doc/screenshots/area.png) |
+| **Line** (multi-series, smooth) | **Area** (gradient fill) |
+| ![Bar](doc/screenshots/bar.png) | ![Pie](doc/screenshots/pie.png) |
+| **Bar** (grouped + data labels) | **Pie** |
+| ![Radar](doc/screenshots/radar.png) | ![Candlestick](doc/screenshots/candlestick.png) |
+| **Radar** (spider) | **Candlestick / OHLC** |
+| ![Heatmap](doc/screenshots/heatmap.png) | ![Treemap](doc/screenshots/treemap.png) |
+| **Heatmap** | **Treemap** |
+
+…plus donut, scatter, bubble, range bar / timeline and radial bar / gauge —
+[see them all live](https://eduardoh89.github.io/apexcharts_flutter/).
+
 ## Features
 
 - **13 chart types:** line, area, bar (grouped / stacked / horizontal), pie,

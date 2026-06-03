@@ -2,7 +2,7 @@ name: apexcharts_flutter
 description: >-
   Native Flutter port of ApexCharts v4.7.0 (MIT): 13 chart types rendered on
   CustomPainter, no WebView, works on every Flutter platform.
-version: 0.1.0
+version: 0.1.1
 homepage: https://github.com/eduardoh89/apexcharts_flutter
 repository: https://github.com/eduardoh89/apexcharts_flutter
 issue_tracker: https://github.com/eduardoh89/apexcharts_flutter/issues
@@ -12,6 +12,24 @@ topics:
   - graph
   - custompainter
   - widgets
+
+screenshots:
+  - description: Multi-series line chart
+    path: doc/screenshots/line.png
+  - description: Area chart with gradient fill
+    path: doc/screenshots/area.png
+  - description: Grouped bar chart with data labels
+    path: doc/screenshots/bar.png
+  - description: Pie chart
+    path: doc/screenshots/pie.png
+  - description: Radar (spider) chart
+    path: doc/screenshots/radar.png
+  - description: Candlestick / OHLC chart
+    path: doc/screenshots/candlestick.png
+  - description: Heatmap
+    path: doc/screenshots/heatmap.png
+  - description: Treemap
+    path: doc/screenshots/treemap.png
 
 environment:
   sdk: '>=3.6.0 <4.0.0'

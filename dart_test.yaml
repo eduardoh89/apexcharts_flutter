@@ -1,0 +1,6 @@
+# The screenshot generator (test/tools/generate_screenshots.dart) is a one-shot
+# image producer, not a real test. Exclude its tag from the default run; invoke
+# it explicitly with: flutter test --tags screenshots
+tags:
+  screenshots:
+    skip: "run explicitly with --tags screenshots"
