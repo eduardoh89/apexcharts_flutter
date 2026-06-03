@@ -206,7 +206,8 @@ class ApexBarOptions {
     final horizontal = bar['horizontal'] as bool? ?? false;
     final thickness = horizontal
         ? (_parsePercent(bar['barHeight']) ?? _parsePercent(bar['columnWidth']))
-        : (_parsePercent(bar['columnWidth']) ?? _parsePercent(bar['barHeight']));
+        : (_parsePercent(bar['columnWidth']) ??
+            _parsePercent(bar['barHeight']));
     return ApexBarOptions(
       horizontal: horizontal,
       columnWidthFraction: thickness ?? 0.7,
@@ -268,8 +269,7 @@ class ApexRadialBarOptions {
       hollowSizeFraction: _parsePercent(hollow?['size']) ?? 0.5,
       trackShow: track?['show'] as bool? ?? true,
       trackMargin: (track?['margin'] as num?)?.toDouble() ?? 5,
-      trackStrokeWidthFraction:
-          _parsePercent(track?['strokeWidth']) ?? 0.97,
+      trackStrokeWidthFraction: _parsePercent(track?['strokeWidth']) ?? 0.97,
       dataLabelsShow: value?['show'] as bool? ?? true,
     );
   }
@@ -394,8 +394,8 @@ class ApexMarkers {
     if (m == null) return ApexMarkers(size: defaultSize);
     final size = _firstNum(m['size'])?.toDouble() ?? defaultSize;
     final hover = m['hover'] as Map<String, dynamic>?;
-    final hoverSize = _firstNum(hover?['size'])?.toDouble() ??
-        (size > 0 ? size + 3 : 6);
+    final hoverSize =
+        _firstNum(hover?['size'])?.toDouble() ?? (size > 0 ? size + 3 : 6);
     return ApexMarkers(
       size: size,
       strokeWidth: _firstNum(m['strokeWidth'])?.toDouble() ?? 2,
@@ -521,7 +521,8 @@ class ApexGradientFill {
   /// bottom.
   final bool inverseColors;
 
-  static ApexGradientFill parse(Map<String, dynamic>? fill, ApexChartType type) {
+  static ApexGradientFill parse(
+      Map<String, dynamic>? fill, ApexChartType type) {
     // ApexCharts' per-chart Defaults override the global fill gradient. For
     // area charts (`Defaults.area()`), the fill gradient defaults to
     // shade:'light', inverseColors:false, opacityFrom:0.65, opacityTo:0.5 — so
@@ -549,8 +550,9 @@ class ApexGradientFill {
       enabled: isGradient || g != null,
       opacityFrom: (g?['opacityFrom'] as num?)?.toDouble() ?? defOpacityFrom,
       opacityTo: (g?['opacityTo'] as num?)?.toDouble() ?? defOpacityTo,
-      stops: (g?['stops'] as List?)?.map((e) => (e as num).toDouble()).toList() ??
-          const [0, 100],
+      stops:
+          (g?['stops'] as List?)?.map((e) => (e as num).toDouble()).toList() ??
+              const [0, 100],
       shade: g?['shade'] as String? ?? defShade,
       shadeIntensity: (g?['shadeIntensity'] as num?)?.toDouble() ?? 0.5,
       inverseColors: g?['inverseColors'] as bool? ?? defInverse,
@@ -771,10 +773,9 @@ class ApexOptions {
       'numeric' => ApexXAxisType.numeric,
       _ => ApexXAxisType.category,
     };
-    final categories = (xaxis?['categories'] as List?)
-            ?.map((e) => e.toString())
-            .toList() ??
-        const <String>[];
+    final categories =
+        (xaxis?['categories'] as List?)?.map((e) => e.toString()).toList() ??
+            const <String>[];
 
     final dataLabels = json['dataLabels'] as Map<String, dynamic>?;
     final dataLabelsEnabled = dataLabels?['enabled'] as bool? ??
@@ -812,7 +813,9 @@ class ApexOptions {
     final tooltip = json['tooltip'] as Map<String, dynamic>?;
     final yaxisList = json['yaxis'];
     final yaxisMap = yaxisList is List
-        ? (yaxisList.isNotEmpty ? yaxisList.first as Map<String, dynamic>? : null)
+        ? (yaxisList.isNotEmpty
+            ? yaxisList.first as Map<String, dynamic>?
+            : null)
         : yaxisList as Map<String, dynamic>?;
     final yFormat = ApexValueFormat.parse(
       (tooltip?['y'] as Map<String, dynamic>?) ??
@@ -848,8 +851,9 @@ class ApexOptions {
       final pieSeries = (json['series'] as List? ?? const [])
           .map((e) => (e as num).toDouble())
           .toList();
-      final labels =
-          (json['labels'] as List? ?? const []).map((e) => e.toString()).toList();
+      final labels = (json['labels'] as List? ?? const [])
+          .map((e) => e.toString())
+          .toList();
       return ApexOptions(
         type: type,
         series: const [],
@@ -940,7 +944,8 @@ class ApexOptions {
       zoom: zoom,
       animations: animationsEnabled == null
           ? animations
-          : ApexAnimations(enabled: animationsEnabled, speedMs: animations.speedMs),
+          : ApexAnimations(
+              enabled: animationsEnabled, speedMs: animations.speedMs),
       gradient: gradient,
       annotations: annotations,
       xMin: xMin,

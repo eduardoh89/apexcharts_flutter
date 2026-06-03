@@ -68,7 +68,8 @@ class RadialBarChartRenderer {
               ? 100
               : values[i];
       final double dataValue = v / 100;
-      final double endAngle = (totalAngle * dataValue).roundToDouble() + startAngle;
+      final double endAngle =
+          (totalAngle * dataValue).roundToDouble() + startAngle;
       if (endAngle > startAngle) {
         _arc(canvas, center, radius, startAngle, endAngle, color, strokeWidth);
       }

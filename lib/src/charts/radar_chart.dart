@@ -22,13 +22,17 @@ class RadarChartRenderer {
   static const Color _polygonStroke = Color(0xFFE8E8E8);
   static const Color _axisLabel = Color(0xFFA8A8A8);
 
-  static void paint(Canvas canvas, Size size, ApexOptions options) {
-    if (options.series.isEmpty) return;
+  /// Resolves the radar geometry (center, radius, normalisation scale and the
+  /// per-point angle mapping) once so the painter and the hit-tester share the
+  /// exact same vertex math (avoids tooltip/marker drift). Returns null when
+  /// there is nothing to draw.
+  static RadarGeometry? geometry(Size size, ApexOptions options) {
+    if (options.series.isEmpty) return null;
     int dataPointsLen = 0;
     for (final s in options.series) {
       dataPointsLen = math.max(dataPointsLen, s.points.length);
     }
-    if (dataPointsLen == 0) return;
+    if (dataPointsLen == 0) return null;
 
     // Nice y-scale gives the ring layers and the min/max used to normalise.
     double yLo = double.infinity, yHi = -double.infinity;
@@ -48,13 +52,12 @@ class RadarChartRenderer {
         : NiceScale.niceScale(yLo, yHi);
     final double minValue = scale.niceMin.toDouble();
     final double maxValue = scale.niceMax.toDouble();
-    final double range = (maxValue - minValue).abs() == 0
-        ? 1
-        : (maxValue - minValue).abs();
+    final double range =
+        (maxValue - minValue).abs() == 0 ? 1 : (maxValue - minValue).abs();
 
     // Reserve room for the outer x-axis labels (Radar shrinks `size`).
-    final labeller =
-        TextDrawer(color: _axisLabel, fontSize: 11, fontFamily: options.fontFamily);
+    final labeller = TextDrawer(
+        color: _axisLabel, fontSize: 11, fontFamily: options.fontFamily);
     double widestLabel = 0;
     for (int j = 0; j < dataPointsLen; j++) {
       final lbl = j < options.categories.length ? options.categories[j] : '';
@@ -64,18 +67,35 @@ class RadarChartRenderer {
     final double defaultSize = math.min(size.width, size.height);
     final double radius =
         defaultSize / 2.1 - options.strokeWidth - widestLabel / 1.75;
-    if (radius <= 0) return;
+    if (radius <= 0) return null;
 
     final center = Offset(size.width / 2, size.height / 2);
     final double disAngle = (math.pi * 2) / dataPointsLen;
+    return RadarGeometry(
+      center: center,
+      radius: radius,
+      disAngle: disAngle,
+      minValue: minValue,
+      range: range,
+      dataPointsLen: dataPointsLen,
+      scale: scale,
+    );
+  }
 
-    Offset vertex(double r, int j) {
-      final angle = j * disAngle;
-      return Offset(
-        center.dx + r * math.sin(angle),
-        center.dy - r * math.cos(angle),
-      );
-    }
+  static void paint(Canvas canvas, Size size, ApexOptions options) {
+    final geo = geometry(size, options);
+    if (geo == null) return;
+    final center = geo.center;
+    final double radius = geo.radius;
+    final double minValue = geo.minValue;
+    final double range = geo.range;
+    final int dataPointsLen = geo.dataPointsLen;
+    final scale = geo.scale;
+
+    final labeller = TextDrawer(
+        color: _axisLabel, fontSize: 11, fontFamily: options.fontFamily);
+
+    Offset vertex(double r, int j) => geo.vertex(r, j);
 
     // --- Background polygons (one per y tick layer) + spokes. ---
     final int layers = scale.result.length;
@@ -201,5 +221,43 @@ class RadarChartRenderer {
   static String _fmtNum(num v) {
     if (v == v.truncate()) return v.toInt().toString();
     return v.toStringAsFixed(1);
+  }
+}
+
+/// Resolved radar layout shared by the painter and the hit-tester so the data
+/// vertices coincide exactly. Vertex j of a value sits at
+/// `(center + r·sin(j·disAngle), center − r·cos(j·disAngle))` where
+/// `r = ((value − minValue) / range)·radius`.
+class RadarGeometry {
+  const RadarGeometry({
+    required this.center,
+    required this.radius,
+    required this.disAngle,
+    required this.minValue,
+    required this.range,
+    required this.dataPointsLen,
+    required this.scale,
+  });
+
+  final Offset center;
+  final double radius;
+  final double disAngle;
+  final double minValue;
+  final double range;
+  final int dataPointsLen;
+  final ScaleResult scale;
+
+  Offset vertex(double r, int j) {
+    final angle = j * disAngle;
+    return Offset(
+      center.dx + r * math.sin(angle),
+      center.dy - r * math.cos(angle),
+    );
+  }
+
+  /// Pixel position of series value [value] at point index [j].
+  Offset pointPosition(num value, int j) {
+    final double pct = ((value - minValue) / range).clamp(0.0, 1.0);
+    return vertex(pct * radius, j);
   }
 }

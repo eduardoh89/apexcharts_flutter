@@ -46,8 +46,7 @@ class AnnotationRenderer {
           linePaint,
         );
         if (a.labelText != null) {
-          _label(canvas, a, Offset(plot.right - 4, y), options,
-              centerX: false);
+          _label(canvas, a, Offset(plot.right - 4, y), options, centerX: false);
         }
       }
     }

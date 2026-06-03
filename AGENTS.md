@@ -1,6 +1,6 @@
-# AGENTS.md — apex_dart
+# AGENTS.md — apexcharts_flutter
 
-Guidance for AI agents (and humans) working on **apex_dart**: a native
+Guidance for AI agents (and humans) working on **apexcharts_flutter**: a native
 Flutter/Dart port of **ApexCharts.js v4.7.0** (the last MIT release).
 
 This file is about *how to work in this package*. For the what/why see
@@ -24,27 +24,19 @@ module it came from (e.g. "ApexCharts `Fill.js` / `Defaults.area()`").
 
 ---
 
-## 1. Environment (critical — read before running anything)
+## 1. Environment
 
-This package lives inside the **Revia Portal** monorepo worktree at
-`graficos/apex_dart/`. The toolchain is pinned and **not on the PATH** of
-non-interactive shells. Use absolute binary paths:
+Requirements:
 
 ```bash
-# Flutter SDK is pinned via FVM (frontend/.fvmrc → 3.38.7, Dart 3.10.7).
-# `fvm` is NOT on the PATH here — call the versioned binary directly:
-~/fvm/versions/3.38.7/bin/flutter
-~/fvm/versions/3.38.7/bin/dart
-
-# Node (for the Puppeteer reference harness):
-node    # v22.x, npm 10.x
+flutter   # >=3.24 (Dart >=3.6)
+node      # v18+ / npm 9+ — only for the Puppeteer reference harness
 ```
 
-Notes that have bitten us before:
-- `timeout(1)` does **not** exist on this macOS. Don't wrap commands in it.
-- Always `cd` into `apex_dart/` (this package) before running flutter/dart.
-- `reference/`, `example/build/`, `tool/node_modules/`, `example/fonts/` and
-  `test/golden/failures/` are **gitignored** — never commit them.
+Notes:
+- `reference/`, `example/build/`, `tool/node_modules/`, `example/fonts/`,
+  `test/golden/reference/*.png` and `test/golden/failures/` are **gitignored**
+  — never commit them.
 - The pure-Dart engine has **zero runtime dependencies** (`pubspec.yaml`):
   no JS, no WebView. Keep it that way.
 
@@ -53,7 +45,7 @@ Notes that have bitten us before:
 ## 2. Repository layout
 
 ```
-lib/apex_dart.dart        Public barrel (export every public symbol here).
+lib/apexcharts_flutter.dart  Public barrel (export every public symbol here).
 lib/src/
   utils/                  math, color, range/niceScale        (port + tests)
   options/                ApexOptions — the typed config model
@@ -76,7 +68,7 @@ example/                  Flutter-web gallery demo app
 
 ```bash
 git clone --branch v4.7.0 https://github.com/apexcharts/apexcharts.js \
-  apex_dart/reference/apexcharts-4.7.0-src
+  reference/apexcharts-4.7.0-src
 # Pinned commit: 1e93a0d47b834111cf616fb6c78a263bbae7c1d8  (see NOTICE)
 ```
 
@@ -115,7 +107,7 @@ Follow this loop for every new chart type, option, or bug fix:
 
 5. **`flutter analyze` clean + all tests green**, then commit.
 
-6. **Export only via `lib/apex_dart.dart`.** New public types must be added to
+6. **Export only via `lib/apexcharts_flutter.dart`.** New public types must be added to
    the barrel.
 
 Read modules from `reference/` **on demand**, one at a time — never try to load
@@ -219,24 +211,22 @@ PNG back to compare against the Puppeteer output. Delete temp tests afterward.
 ## 5. Commands
 
 ```bash
-cd apex_dart
-
 # Analyze (must be clean before committing)
-~/fvm/versions/3.38.7/bin/flutter analyze lib test
+flutter analyze lib test
 
 # Tests — whole suite, or a subset (faster while iterating)
-~/fvm/versions/3.38.7/bin/flutter test
-~/fvm/versions/3.38.7/bin/flutter test test/golden test/interaction test/options
+flutter test
+flutter test test/golden test/interaction test/options
 
 # Regenerate goldens after an INTENTIONAL visual change (review the diff!)
-~/fvm/versions/3.38.7/bin/flutter test --update-goldens
+flutter test --update-goldens
 
 # Reference PNGs from the real ApexCharts (Puppeteer)
 cd tool && npm install && node render_reference.mjs
 
 # Build + serve the example gallery (web)
-cd example && ~/fvm/versions/3.38.7/bin/flutter build web --release
-pkill -f "http.server 8099"; cd build/web && (python3 -m http.server 8099 &)
+cd example && flutter build web --release
+cd build/web && python3 -m http.server 8099
 # → http://localhost:8099
 ```
 
@@ -274,7 +264,7 @@ makes one worse.
   reconsider.
 - **Dart style:** `flutter_lints` + strict-casts (see `analysis_options.yaml`).
   Classes PascalCase, files snake_case, private members `_prefixed`.
-- **Commits:** `feat(apex_dart): ...` / `fix(apex_dart): ...`, describing *why*
+- **Commits:** `feat: ...` / `fix: ...`, describing *why*
   and naming the upstream module the behavior was ported from. Don't commit
   `reference/`, build output, `node_modules`, font copies, or temp inspector
   scripts. Don't push unless explicitly asked.
@@ -288,5 +278,5 @@ makes one worse.
 - [ ] Verified against real ApexCharts via Puppeteer (golden and/or inspector).
 - [ ] Unit tests for new math/parsing; golden test for new visuals.
 - [ ] `flutter analyze lib test` clean; full `flutter test` green.
-- [ ] New public symbols exported from `lib/apex_dart.dart`.
+- [ ] New public symbols exported from `lib/apexcharts_flutter.dart`.
 - [ ] Temp scripts/PNGs removed; nothing gitignored got staged.

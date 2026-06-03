@@ -71,9 +71,8 @@ class HeatMapChartRenderer {
       minY = 0;
       maxY = 1;
     }
-    final double total = (maxY.abs() + minY.abs()) == 0
-        ? -0.000001
-        : maxY.abs() + minY.abs();
+    final double total =
+        (maxY.abs() + minY.abs()) == 0 ? -0.000001 : maxY.abs() + minY.abs();
     final double shadeIntensity = options.heatmap.shadeIntensity;
     final bool hasNegs = minY < 0;
 
@@ -162,7 +161,11 @@ class HeatMapChartRenderer {
     for (final cell in laid) {
       plot = plot == null ? cell.rect : plot.expandToInclude(cell.rect);
       final rrect = RRect.fromRectAndRadius(cell.rect, Radius.circular(radius));
-      canvas.drawRRect(rrect, Paint()..color = cell.color..isAntiAlias = true);
+      canvas.drawRRect(
+          rrect,
+          Paint()
+            ..color = cell.color
+            ..isAntiAlias = true);
       canvas.drawRRect(rrect, strokePaint);
       if (options.dataLabelsEnabled) {
         dataLabeller.draw(

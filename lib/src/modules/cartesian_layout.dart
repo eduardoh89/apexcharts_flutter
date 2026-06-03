@@ -38,7 +38,8 @@ class XWindow {
       lo -= hi - domainMax;
       hi = domainMax;
     }
-    return XWindow(lo.clamp(domainMin, domainMax), hi.clamp(domainMin, domainMax));
+    return XWindow(
+        lo.clamp(domainMin, domainMax), hi.clamp(domainMin, domainMax));
   }
 
   @override
@@ -176,8 +177,8 @@ class CartesianLayout {
       domainMax = (maxPoints <= 1 ? 1 : maxPoints - 1).toDouble();
     }
 
-    final XWindow view =
-        (xWindow ?? XWindow(domainMin, domainMax)).clampTo(domainMin, domainMax);
+    final XWindow view = (xWindow ?? XWindow(domainMin, domainMax))
+        .clampTo(domainMin, domainMax);
 
     // Determine the y extent across all series. ApexCharts (`Range.getMinYMaxY`)
     // only restricts the y range to the visible x-window when
@@ -244,14 +245,16 @@ class CartesianLayout {
     final double targetYMax = scale?.niceMax.toDouble() ?? yHi;
     final double resolvedYMin = yOverride?.min ?? targetYMin;
     final double resolvedYMax = yOverride?.max ?? targetYMax;
-    final List<num> resolvedTicks = yOverride?.ticks ?? scale?.result ?? const [];
+    final List<num> resolvedTicks =
+        yOverride?.ticks ?? scale?.result ?? const [];
 
     // Reserve gutter width based on the widest y label.
     final labeller = TextDrawer(fontFamily: options.fontFamily);
     double widestLabel = 0;
     if (rangeAxis) {
       // Row labels live on Y for timelines; reserve based on the widest of them.
-      final firstSeries = options.series.isNotEmpty ? options.series.first : null;
+      final firstSeries =
+          options.series.isNotEmpty ? options.series.first : null;
       for (int j = 0; j < maxPoints; j++) {
         String label = '';
         if (firstSeries != null && j < firstSeries.points.length) {

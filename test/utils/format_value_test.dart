@@ -1,4 +1,4 @@
-import 'package:apex_dart/apex_dart.dart';
+import 'package:apexcharts_flutter/apexcharts_flutter.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -36,7 +36,10 @@ void main() {
       final line = ApexOptions.fromJson({
         'chart': {'type': 'line'},
         'series': [
-          {'name': 'A', 'data': [1, 2, 3]}
+          {
+            'name': 'A',
+            'data': [1, 2, 3]
+          }
         ],
       });
       expect(line.markers.size, 0);
@@ -45,7 +48,10 @@ void main() {
         'chart': {'type': 'line'},
         'markers': {'size': 5},
         'series': [
-          {'name': 'A', 'data': [1, 2, 3]}
+          {
+            'name': 'A',
+            'data': [1, 2, 3]
+          }
         ],
       });
       expect(withMarkers.markers.size, 5);
@@ -53,7 +59,12 @@ void main() {
       final scatter = ApexOptions.fromJson({
         'chart': {'type': 'scatter'},
         'series': [
-          {'name': 'A', 'data': [[1, 2]]}
+          {
+            'name': 'A',
+            'data': [
+              [1, 2]
+            ]
+          }
         ],
       });
       expect(scatter.markers.size, 6);
@@ -66,7 +77,10 @@ void main() {
           'y': {'prefix': r'$', 'suffix': ' USD'}
         },
         'series': [
-          {'name': 'A', 'data': [1, 2, 3]}
+          {
+            'name': 'A',
+            'data': [1, 2, 3]
+          }
         ],
       });
       expect(o.yFormat.prefix, r'$');
@@ -83,7 +97,10 @@ void main() {
           'title': {'text': 'Revenue'}
         },
         'series': [
-          {'name': 'A', 'data': [1, 2, 3]}
+          {
+            'name': 'A',
+            'data': [1, 2, 3]
+          }
         ],
       });
       expect(o.xTitle.text, 'Month');

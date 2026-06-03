@@ -19,8 +19,7 @@ class DiffResult {
   bool withinTolerance(double tolerance) => fraction <= tolerance;
 
   @override
-  String toString() =>
-      'DiffResult(${(fraction * 100).toStringAsFixed(2)}% '
+  String toString() => 'DiffResult(${(fraction * 100).toStringAsFixed(2)}% '
       '$mismatchedPixels/$totalPixels px)';
 }
 
@@ -43,8 +42,7 @@ class ImageDiff {
     final codec = await ui.instantiateImageCodec(bytes);
     final frame = await codec.getNextFrame();
     final image = frame.image;
-    final data =
-        await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
     return Raster(
       width: image.width,
       height: image.height,
@@ -98,9 +96,8 @@ class ImageDiff {
     required Raster candidate,
     int channelThreshold = 24,
   }) async {
-    final int w = reference.width < candidate.width
-        ? reference.width
-        : candidate.width;
+    final int w =
+        reference.width < candidate.width ? reference.width : candidate.width;
     final int h = reference.height < candidate.height
         ? reference.height
         : candidate.height;
@@ -140,8 +137,7 @@ class ImageDiff {
       }
     }
 
-    final totalW =
-        (reference.width + candidate.width + w).toDouble() + gap * 2;
+    final totalW = (reference.width + candidate.width + w).toDouble() + gap * 2;
     final totalH =
         [reference.height, candidate.height, h].reduce((a, b) => a > b ? a : b);
     final picture = recorder.endRecording();

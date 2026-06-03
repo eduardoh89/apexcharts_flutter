@@ -78,7 +78,8 @@ class GridRenderer {
     final double span =
         (layout.yMax - layout.yMin) == 0 ? 1 : layout.yMax - layout.yMin;
     double valueToX(num v) =>
-        layout.plotRect.left + ((v - layout.yMin) / span) * layout.plotRect.width;
+        layout.plotRect.left +
+        ((v - layout.yMin) / span) * layout.plotRect.width;
 
     final double labelY = layout.plotRect.bottom + 8;
     final bool datetime = options.xAxisType == ApexXAxisType.datetime;
@@ -190,14 +191,19 @@ class GridRenderer {
             ? widest
             : labeller.measure(label).width;
       }
-      final double slotWidth = n > 0 ? layout.plotRect.width / n : layout.plotRect.width;
+      final double slotWidth =
+          n > 0 ? layout.plotRect.width / n : layout.plotRect.width;
       final bool rotate = widest + 4 > slotWidth;
       const double rotation = -0.7853981633974483; // -45°
 
       for (int i = 0; i < n; i++) {
         final label = i < cats.length ? cats[i] : (i + 1).toString();
-        final x =
-            banded ? layout.xBandCenter(i) : layout.xCategoryToPixel(i);
+        final x = banded ? layout.xBandCenter(i) : layout.xCategoryToPixel(i);
+        // When zoomed, categories outside the visible window map outside the
+        // plot; ApexCharts only draws ticks within the grid, so skip those.
+        if (x < layout.plotRect.left - 1 || x > layout.plotRect.right + 1) {
+          continue;
+        }
         if (rotate) {
           labeller.draw(
             canvas,

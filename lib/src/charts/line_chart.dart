@@ -45,9 +45,8 @@ class LineChartRenderer {
           // bottom — this is what gives the demo its lighter-top/deeper-bottom
           // blue band instead of a flat fill.
           final g = options.gradient;
-          final double intensity = g.shade == 'dark'
-              ? -g.shadeIntensity
-              : g.shadeIntensity;
+          final double intensity =
+              g.shade == 'dark' ? -g.shadeIntensity : g.shadeIntensity;
           final Color shaded = ApexColor.shade(color, intensity);
           Color topColor = color;
           Color bottomColor = shaded;

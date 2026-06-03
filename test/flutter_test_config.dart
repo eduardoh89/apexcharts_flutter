@@ -11,7 +11,8 @@ import 'package:flutter_test/flutter_test.dart';
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  final fontData = File('test/assets/fonts/Inter-Variable.ttf').readAsBytesSync();
+  final fontData =
+      File('test/assets/fonts/Inter-Variable.ttf').readAsBytesSync();
   final loader = FontLoader('Inter')
     ..addFont(Future.value(ByteData.view(fontData.buffer)));
   await loader.load();

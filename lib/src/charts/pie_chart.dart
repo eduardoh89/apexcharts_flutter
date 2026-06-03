@@ -37,7 +37,8 @@ class PieChartRenderer {
       top = 26;
     }
 
-    final area = Rect.fromLTRB(left, top, size.width - right, size.height - bottom);
+    final area =
+        Rect.fromLTRB(left, top, size.width - right, size.height - bottom);
     final centerX = area.center.dx;
     final centerY = area.center.dy;
 
@@ -76,7 +77,11 @@ class PieChartRenderer {
       );
       path.close();
 
-      canvas.drawPath(path, Paint()..color = color..style = PaintingStyle.fill);
+      canvas.drawPath(
+          path,
+          Paint()
+            ..color = color
+            ..style = PaintingStyle.fill);
       canvas.drawPath(path, strokePaint);
 
       startRad += sweep;
@@ -87,7 +92,9 @@ class PieChartRenderer {
       canvas.drawCircle(
         center,
         donutInner,
-        Paint()..color = const Color(0xFFFFFFFF)..style = PaintingStyle.fill,
+        Paint()
+          ..color = const Color(0xFFFFFFFF)
+          ..style = PaintingStyle.fill,
       );
     }
 

@@ -68,10 +68,20 @@ class DataLabelsRenderer {
         final double x = options.xAxisType == ApexXAxisType.category
             ? layout.xCategoryToPixel(j)
             : layout.xValueToPixel(p.x ?? j.toDouble());
+        final text = FormatValue.formatted(p.y, options.yFormat);
+        // ApexCharts `DataLabels.drawDataLabel` (#2264): a label whose anchor
+        // falls well outside the grid (e.g. when zoomed) is blanked so it never
+        // bleeds into the chart chrome. The first/last in-view labels (which
+        // sit right at the plot edges) stay visible.
+        final double w = labeller.measure(text).width;
+        if (x < layout.plotRect.left - 20 - w ||
+            x > layout.plotRect.right + w + 30) {
+          continue;
+        }
         final double y = layout.yToPixel(p.y) - 8;
         labeller.draw(
           canvas,
-          FormatValue.formatted(p.y, options.yFormat),
+          text,
           Offset(x, y),
           anchor: TextAnchor.middle,
         );
@@ -114,15 +124,20 @@ class DataLabelsRenderer {
     final double barWidth =
         (xDivision / seriesLen) * options.bar.columnWidthFraction;
     final double groupPad = (xDivision - barWidth * seriesLen) / 2;
+    // ApexCharts `bar/DataLabels.js` position 'top' (the column default, see
+    // Options.js plotOptions.bar.dataLabels.position): the label baseline sits
+    // at the bar's top edge, so the text renders fully ABOVE the bar. Our
+    // TextDrawer is top-anchored, so offset the draw point up by the text
+    // height (plus a 2px gap) to put the text's bottom just above the bar top.
+    final double textH = labeller.measure('0').height;
     for (int j = 0; j < layout.pointCount; j++) {
-      final double bandLeft =
-          layout.xBandCenter(j) - xDivision / 2 + groupPad;
+      final double bandLeft = layout.xBandCenter(j) - xDivision / 2 + groupPad;
       for (int i = 0; i < seriesLen; i++) {
         final s = options.series[i];
         if (j >= s.points.length) continue;
         final v = s.points[j].y;
         final cx = bandLeft + i * barWidth + barWidth / 2;
-        final top = layout.yToPixel(v) - 8;
+        final top = layout.yToPixel(v) - textH - 2;
         labeller.draw(
           canvas,
           FormatValue.formatted(v, options.yFormat),

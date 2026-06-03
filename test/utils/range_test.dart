@@ -1,4 +1,4 @@
-import 'package:apex_dart/apex_dart.dart';
+import 'package:apexcharts_flutter/apexcharts_flutter.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

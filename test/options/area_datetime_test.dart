@@ -1,4 +1,4 @@
-import 'package:apex_dart/apex_dart.dart';
+import 'package:apexcharts_flutter/apexcharts_flutter.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -21,23 +21,52 @@ void main() {
 
   group('area-datetime options parsing', () {
     final o = ApexOptions.fromJson({
-      'chart': {'type': 'area', 'zoom': {'autoScaleYaxis': true}},
+      'chart': {
+        'type': 'area',
+        'zoom': {'autoScaleYaxis': true}
+      },
       'colors': ['#008FFB'],
       'series': [
-        {'name': 'ABC', 'data': [[1327359600000, 30.95], [1327446000000, 31.34]]}
+        {
+          'name': 'ABC',
+          'data': [
+            [1327359600000, 30.95],
+            [1327446000000, 31.34]
+          ]
+        }
       ],
       'xaxis': {'type': 'datetime', 'min': 1330578000000, 'tickAmount': 6},
-      'tooltip': {'x': {'format': 'dd MMM yyyy'}},
+      'tooltip': {
+        'x': {'format': 'dd MMM yyyy'}
+      },
       'fill': {
         'type': 'gradient',
-        'gradient': {'opacityFrom': 0.7, 'opacityTo': 0.9, 'stops': [0, 100]}
+        'gradient': {
+          'opacityFrom': 0.7,
+          'opacityTo': 0.9,
+          'stops': [0, 100]
+        }
       },
       'annotations': {
         'yaxis': [
-          {'y': 30, 'borderColor': '#999', 'label': {'text': 'Support', 'style': {'color': '#fff', 'background': '#00E396'}}}
+          {
+            'y': 30,
+            'borderColor': '#999',
+            'label': {
+              'text': 'Support',
+              'style': {'color': '#fff', 'background': '#00E396'}
+            }
+          }
         ],
         'xaxis': [
-          {'x': 1352847600000, 'borderColor': '#999', 'label': {'text': 'Rally', 'style': {'color': '#fff', 'background': '#775DD0'}}}
+          {
+            'x': 1352847600000,
+            'borderColor': '#999',
+            'label': {
+              'text': 'Rally',
+              'style': {'color': '#fff', 'background': '#775DD0'}
+            }
+          }
         ],
       },
     });

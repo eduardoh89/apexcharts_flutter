@@ -138,7 +138,8 @@ class TimeScale {
       hour = hour.add(const Duration(hours: 1));
     }
     while (hour.millisecondsSinceEpoch <= maxMs) {
-      out.add(TimeTick(hour.millisecondsSinceEpoch.toDouble(), _timeLabel(hour)));
+      out.add(
+          TimeTick(hour.millisecondsSinceEpoch.toDouble(), _timeLabel(hour)));
       hour = hour.add(const Duration(hours: 1));
     }
     return out;
@@ -153,8 +154,8 @@ class TimeScale {
       minute = minute.add(const Duration(minutes: 1));
     }
     while (minute.millisecondsSinceEpoch <= maxMs) {
-      out.add(
-          TimeTick(minute.millisecondsSinceEpoch.toDouble(), _timeLabel(minute)));
+      out.add(TimeTick(
+          minute.millisecondsSinceEpoch.toDouble(), _timeLabel(minute)));
       minute = minute.add(const Duration(minutes: 1));
     }
     return out;
@@ -169,8 +170,8 @@ class TimeScale {
       sec = sec.add(const Duration(seconds: 1));
     }
     while (sec.millisecondsSinceEpoch <= maxMs) {
-      out.add(TimeTick(
-          sec.millisecondsSinceEpoch.toDouble(), _secondLabel(sec)));
+      out.add(
+          TimeTick(sec.millisecondsSinceEpoch.toDouble(), _secondLabel(sec)));
       sec = sec.add(const Duration(seconds: 1));
     }
     return out;

@@ -96,7 +96,11 @@ class TreemapChartRenderer {
         r,
         Radius.circular(options.treemap.borderRadius),
       );
-      canvas.drawRRect(rrect, Paint()..color = tile.color..isAntiAlias = true);
+      canvas.drawRRect(
+          rrect,
+          Paint()
+            ..color = tile.color
+            ..isAntiAlias = true);
       canvas.drawRRect(rrect, strokePaint);
 
       // Label: tile name centered, drawn when it fits.
@@ -216,13 +220,15 @@ class _Container {
     if (width >= height) {
       final double areaWidth = rowSum / height;
       for (final v in row) {
-        coords.add(Rect.fromLTRB(subx, suby, subx + areaWidth, suby + v / areaWidth));
+        coords.add(
+            Rect.fromLTRB(subx, suby, subx + areaWidth, suby + v / areaWidth));
         suby += v / areaWidth;
       }
     } else {
       final double areaHeight = rowSum / width;
       for (final v in row) {
-        coords.add(Rect.fromLTRB(subx, suby, subx + v / areaHeight, suby + areaHeight));
+        coords.add(Rect.fromLTRB(
+            subx, suby, subx + v / areaHeight, suby + areaHeight));
         subx += v / areaHeight;
       }
     }
@@ -232,10 +238,12 @@ class _Container {
   _Container cutArea(double area) {
     if (width >= height) {
       final double areaWidth = area / height;
-      return _Container(xoffset + areaWidth, yoffset, width - areaWidth, height);
+      return _Container(
+          xoffset + areaWidth, yoffset, width - areaWidth, height);
     } else {
       final double areaHeight = area / width;
-      return _Container(xoffset, yoffset + areaHeight, width, height - areaHeight);
+      return _Container(
+          xoffset, yoffset + areaHeight, width, height - areaHeight);
     }
   }
 }

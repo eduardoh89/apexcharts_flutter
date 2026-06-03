@@ -18,6 +18,7 @@ import 'interaction/cartesian_hit_tester.dart';
 import 'interaction/chart_hit.dart';
 import 'interaction/hover_painter.dart';
 import 'interaction/pie_hit_tester.dart';
+import 'interaction/radar_hit_tester.dart';
 import 'interaction/tile_hit_tester.dart';
 import 'interaction/tooltip_overlay.dart';
 import 'interaction/zoom_toolbar.dart';
@@ -86,8 +87,7 @@ class ApexChartController {
   void resetZoom() => _state?._resetZoom();
 }
 
-class _ApexChartState extends State<ApexChart>
-    with TickerProviderStateMixin {
+class _ApexChartState extends State<ApexChart> with TickerProviderStateMixin {
   // Geometry captured during the last paint so hit-testing matches exactly.
   CartesianLayout? _lastLayout;
   Size _lastSize = Size.zero;
@@ -215,11 +215,13 @@ class _ApexChartState extends State<ApexChart>
       hit = CartesianHitTester(layout: _lastLayout!, options: widget.options)
           .hitTest(local);
     } else if (type.isRadial) {
-      hit = PieHitTester(size: _lastSize, options: widget.options)
-          .hitTest(local);
-    } else if (type == ApexChartType.heatmap ||
-        type == ApexChartType.treemap) {
+      hit =
+          PieHitTester(size: _lastSize, options: widget.options).hitTest(local);
+    } else if (type == ApexChartType.heatmap || type == ApexChartType.treemap) {
       hit = TileHitTester(size: _lastSize, options: widget.options)
+          .hitTest(local);
+    } else if (type == ApexChartType.radar) {
+      hit = RadarHitTester(size: _lastSize, options: widget.options)
           .hitTest(local);
     }
     if (hit != _hit) {
@@ -410,8 +412,8 @@ class _ApexChartState extends State<ApexChart>
     final newMin = focusDom - focusT * newSpan;
     final newMax = focusDom + (1 - focusT) * newSpan;
 
-    final next = XWindow(newMin, newMax)
-        .clampTo(layout.xDomainMin, layout.xDomainMax);
+    final next =
+        XWindow(newMin, newMax).clampTo(layout.xDomainMin, layout.xDomainMax);
     // If clamping pinned us back to the full domain, treat as un-zoomed.
     final full = next.min <= layout.xDomainMin + 1e-9 &&
         next.max >= layout.xDomainMax - 1e-9;
@@ -665,6 +667,9 @@ class _ApexChartPainter extends CustomPainter {
       RadarChartRenderer.paint(canvas, size, options);
     }
     LegendRenderer.paint(canvas, size, options);
+    if (t >= 0.99 && hit != null) {
+      HoverPainter.paint(canvas, hit!, null);
+    }
   }
 
   void _paintRadialBar(Canvas canvas, Size size) {
@@ -782,22 +787,35 @@ class _ApexChartPainter extends CustomPainter {
     // Labels / hover overlays draw only once the entrance settles, so they
     // don't flicker mid-animation.
     if (t >= 0.99) {
+      // Data labels live in an overflow-visible layer in ApexCharts: the first
+      // and last point labels intentionally spill into the side gutters, and
+      // column 'top' labels sit above the plot. Clip generously (full width,
+      // top of canvas down to the x-axis) so edge labels aren't half-cut;
+      // far-off (zoomed-out) labels are blanked inside the renderer (#2264).
       canvas.save();
-      canvas.clipRect(layout.plotRect.inflate(1));
+      canvas.clipRect(
+          Rect.fromLTRB(0, 0, size.width, layout.plotRect.bottom + 1));
       DataLabelsRenderer.paint(canvas, layout, options);
-      if (hit != null) {
-        HoverPainter.paint(canvas, hit!, layout);
-      }
       canvas.restore();
+      // Hover/crosshair stays clipped to the plot.
+      if (hit != null) {
+        canvas.save();
+        canvas.clipRect(layout.plotRect.inflate(1));
+        HoverPainter.paint(canvas, hit!, layout);
+        canvas.restore();
+      }
     }
 
     LegendRenderer.paint(canvas, size, options);
 
     // Selection rectangle (drag-to-zoom) — ApexCharts xcrosshairs selection.
     if (selectStartX != null && selectCurrentX != null) {
-      final lo = selectStartX! < selectCurrentX! ? selectStartX! : selectCurrentX!;
-      final hi = selectStartX! < selectCurrentX! ? selectCurrentX! : selectStartX!;
-      final rect = Rect.fromLTRB(lo, layout.plotRect.top, hi, layout.plotRect.bottom);
+      final lo =
+          selectStartX! < selectCurrentX! ? selectStartX! : selectCurrentX!;
+      final hi =
+          selectStartX! < selectCurrentX! ? selectCurrentX! : selectStartX!;
+      final rect =
+          Rect.fromLTRB(lo, layout.plotRect.top, hi, layout.plotRect.bottom);
       canvas.drawRect(
         rect,
         Paint()..color = const Color(0x1A008FFB),

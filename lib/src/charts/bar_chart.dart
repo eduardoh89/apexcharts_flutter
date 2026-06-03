@@ -48,14 +48,12 @@ class BarChartRenderer {
     final double baselineY = layout.yToPixel(0);
 
     for (int j = 0; j < layout.pointCount; j++) {
-      final double bandLeft =
-          layout.xBandCenter(j) - xDivision / 2 + groupPad;
+      final double bandLeft = layout.xBandCenter(j) - xDivision / 2 + groupPad;
       for (int i = 0; i < seriesLen; i++) {
         final series = options.series[i];
         if (j >= series.points.length) continue;
         final value = series.points[j].y;
-        final color =
-            series.color ?? options.colors[i % options.colors.length];
+        final color = series.color ?? options.colors[i % options.colors.length];
 
         final double left = bandLeft + i * barWidth;
         final double top = layout.yToPixel(value);
@@ -91,8 +89,7 @@ class BarChartRenderer {
         final series = options.series[i];
         if (j >= series.points.length) continue;
         final value = series.points[j].y;
-        final color =
-            series.color ?? options.colors[i % options.colors.length];
+        final color = series.color ?? options.colors[i % options.colors.length];
 
         final double base = value >= 0 ? posAcc : negAcc;
         final double topValue = base + value;
@@ -157,8 +154,8 @@ class BarChartRenderer {
           final x1 = valueToX(acc);
           _fillBar(
             canvas,
-            Rect.fromLTRB(x0 < x1 ? x0 : x1, bandTop + pad,
-                x0 < x1 ? x1 : x0, bandTop + pad + barH),
+            Rect.fromLTRB(x0 < x1 ? x0 : x1, bandTop + pad, x0 < x1 ? x1 : x0,
+                bandTop + pad + barH),
             color,
             0,
             vertical: false,
@@ -177,8 +174,7 @@ class BarChartRenderer {
         final series = options.series[i];
         if (j >= series.points.length) continue;
         final value = series.points[j].y;
-        final color =
-            series.color ?? options.colors[i % options.colors.length];
+        final color = series.color ?? options.colors[i % options.colors.length];
         final double top = bandTop + groupPad + i * barH;
         final double valX = valueToX(value);
         _fillBar(

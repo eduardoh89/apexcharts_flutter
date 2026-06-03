@@ -1,19 +1,19 @@
-import 'package:apex_dart/apex_dart.dart';
+import 'package:apexcharts_flutter/apexcharts_flutter.dart';
 import 'package:flutter/material.dart';
 
 import 'area_datetime_demo.dart';
 
 void main() => runApp(const GalleryApp());
 
-/// A gallery that renders every apex_dart chart type so the port can be
-/// eyeballed on any platform (macOS / web / Android / Windows).
+/// A gallery that renders every apexcharts_flutter chart type so the port can
+/// be eyeballed on any platform (macOS / web / Android / Windows).
 class GalleryApp extends StatelessWidget {
   const GalleryApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'apex_dart gallery',
+      title: 'apexcharts_flutter gallery',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
@@ -41,7 +41,10 @@ class GalleryPage extends StatelessWidget {
           'colors': ['#008FFB'],
           'markers': {'size': 5},
           'series': [
-            {'name': 'Sales', 'data': [10, 41, 35, 51, 49, 62, 69, 91, 148]}
+            {
+              'name': 'Sales',
+              'data': [10, 41, 35, 51, 49, 62, 69, 91, 148]
+            }
           ],
           'xaxis': {
             'categories': [1, 2, 3, 4, 5, 6, 7, 8, 9],
@@ -60,16 +63,28 @@ class GalleryPage extends StatelessWidget {
           'stroke': {'curve': 'straight', 'width': 3},
           'colors': ['#008FFB', '#00E396', '#FEB019'],
           'series': [
-            {'name': 'Team A', 'data': [31, 40, 28, 51, 42, 109, 100]},
-            {'name': 'Team B', 'data': [11, 32, 45, 32, 34, 52, 41]},
-            {'name': 'Team C', 'data': [15, 11, 32, 18, 9, 24, 11]},
+            {
+              'name': 'Team A',
+              'data': [31, 40, 28, 51, 42, 109, 100]
+            },
+            {
+              'name': 'Team B',
+              'data': [11, 32, 45, 32, 34, 52, 41]
+            },
+            {
+              'name': 'Team C',
+              'data': [15, 11, 32, 18, 9, 24, 11]
+            },
           ],
           'xaxis': {
             'categories': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
           },
         }),
         ChartSpec('Line — zoomable timeseries (drag / wheel to zoom)', {
-          'chart': {'type': 'line', 'zoom': {'enabled': true}},
+          'chart': {
+            'type': 'line',
+            'zoom': {'enabled': true}
+          },
           'stroke': {'curve': 'smooth', 'width': 3},
           'colors': ['#775DD0'],
           'series': [
@@ -80,13 +95,11 @@ class GalleryPage extends StatelessWidget {
                   [
                     1704067200000 + d * 86400000,
                     (30 +
-                        35 *
-                            (0.5 +
-                                0.5 *
-                                    (d % 7 == 0
-                                        ? 1.0
-                                        : (d % 5) / 5.0)) +
-                        (d * 1.4)).round()
+                            35 *
+                                (0.5 +
+                                    0.5 * (d % 7 == 0 ? 1.0 : (d % 5) / 5.0)) +
+                            (d * 1.4))
+                        .round()
                   ]
               ],
             }
@@ -98,10 +111,22 @@ class GalleryPage extends StatelessWidget {
           'stroke': {'curve': 'smooth', 'width': 2},
           'colors': ['#00E396'],
           'series': [
-            {'name': 'Revenue', 'data': [12, 18, 14, 26, 31, 28, 40, 52]}
+            {
+              'name': 'Revenue',
+              'data': [12, 18, 14, 26, 31, 28, 40, 52]
+            }
           ],
           'xaxis': {
-            'categories': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug']
+            'categories': [
+              'Jan',
+              'Feb',
+              'Mar',
+              'Apr',
+              'May',
+              'Jun',
+              'Jul',
+              'Aug'
+            ]
           },
           'dataLabels': {'enabled': true},
         }),
@@ -112,8 +137,14 @@ class GalleryPage extends StatelessWidget {
           },
           'colors': ['#008FFB', '#00E396'],
           'series': [
-            {'name': '2023', 'data': [44, 55, 57, 56, 61, 58]},
-            {'name': '2024', 'data': [76, 85, 101, 98, 87, 105]},
+            {
+              'name': '2023',
+              'data': [44, 55, 57, 56, 61, 58]
+            },
+            {
+              'name': '2024',
+              'data': [76, 85, 101, 98, 87, 105]
+            },
           ],
           'xaxis': {
             'categories': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
@@ -127,9 +158,18 @@ class GalleryPage extends StatelessWidget {
           },
           'colors': ['#008FFB', '#00E396', '#FEB019'],
           'series': [
-            {'name': 'Q1', 'data': [20, 30, 25, 40, 32, 28]},
-            {'name': 'Q2', 'data': [15, 25, 20, 18, 22, 30]},
-            {'name': 'Q3', 'data': [10, 12, 18, 22, 15, 20]},
+            {
+              'name': 'Q1',
+              'data': [20, 30, 25, 40, 32, 28]
+            },
+            {
+              'name': 'Q2',
+              'data': [15, 25, 20, 18, 22, 30]
+            },
+            {
+              'name': 'Q3',
+              'data': [10, 12, 18, 22, 15, 20]
+            },
           ],
           'xaxis': {
             'categories': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
@@ -142,7 +182,10 @@ class GalleryPage extends StatelessWidget {
           },
           'colors': ['#FF4560'],
           'series': [
-            {'name': 'Score', 'data': [44, 55, 41, 67, 22, 43]}
+            {
+              'name': 'Score',
+              'data': [44, 55, 41, 67, 22, 43]
+            }
           ],
           'xaxis': {
             'categories': ['A', 'B', 'C', 'D', 'E', 'F']
@@ -155,13 +198,23 @@ class GalleryPage extends StatelessWidget {
             {
               'name': 'Sample A',
               'data': [
-                [10, 21], [22, 35], [33, 28], [45, 50], [58, 41], [70, 63]
+                [10, 21],
+                [22, 35],
+                [33, 28],
+                [45, 50],
+                [58, 41],
+                [70, 63]
               ],
             },
             {
               'name': 'Sample B',
               'data': [
-                [12, 11], [25, 18], [38, 25], [50, 20], [62, 33], [75, 28]
+                [12, 11],
+                [25, 18],
+                [38, 25],
+                [50, 20],
+                [62, 33],
+                [75, 28]
               ],
             },
           ],
@@ -175,15 +228,23 @@ class GalleryPage extends StatelessWidget {
             {
               'name': 'Bubble A',
               'data': [
-                [10, 30, 25], [25, 55, 40], [40, 20, 60],
-                [55, 70, 30], [70, 45, 50], [85, 60, 20]
+                [10, 30, 25],
+                [25, 55, 40],
+                [40, 20, 60],
+                [55, 70, 30],
+                [70, 45, 50],
+                [85, 60, 20]
               ],
             },
             {
               'name': 'Bubble B',
               'data': [
-                [15, 50, 35], [30, 25, 55], [48, 65, 25],
-                [62, 35, 45], [78, 55, 60], [92, 40, 30]
+                [15, 50, 35],
+                [30, 25, 55],
+                [48, 65, 25],
+                [62, 35, 45],
+                [78, 55, 60],
+                [92, 40, 30]
               ],
             },
           ],
@@ -202,10 +263,22 @@ class GalleryPage extends StatelessWidget {
             {
               'name': 'Tasks',
               'data': [
-                {'x': 'Design', 'y': [1609459200000, 1610668800000]},
-                {'x': 'Build', 'y': [1610668800000, 1612483200000]},
-                {'x': 'Test', 'y': [1612483200000, 1613692800000]},
-                {'x': 'Deploy', 'y': [1613692800000, 1614297600000]},
+                {
+                  'x': 'Design',
+                  'y': [1609459200000, 1610668800000]
+                },
+                {
+                  'x': 'Build',
+                  'y': [1610668800000, 1612483200000]
+                },
+                {
+                  'x': 'Test',
+                  'y': [1612483200000, 1613692800000]
+                },
+                {
+                  'x': 'Deploy',
+                  'y': [1613692800000, 1614297600000]
+                },
               ],
             }
           ],
@@ -230,11 +303,24 @@ class GalleryPage extends StatelessWidget {
           'colors': ['#008FFB', '#FF4560'],
           'dataLabels': {'enabled': false},
           'series': [
-            {'name': 'Series A', 'data': [80, 50, 30, 40, 100, 20]},
-            {'name': 'Series B', 'data': [20, 30, 40, 80, 20, 80]},
+            {
+              'name': 'Series A',
+              'data': [80, 50, 30, 40, 100, 20]
+            },
+            {
+              'name': 'Series B',
+              'data': [20, 30, 40, 80, 20, 80]
+            },
           ],
           'xaxis': {
-            'categories': ['Speed', 'Power', 'Range', 'Armor', 'Agility', 'Stealth']
+            'categories': [
+              'Speed',
+              'Power',
+              'Range',
+              'Armor',
+              'Agility',
+              'Stealth'
+            ]
           },
           'legend': {'show': false},
         }),
@@ -243,24 +329,51 @@ class GalleryPage extends StatelessWidget {
           'dataLabels': {'enabled': false},
           'colors': ['#008FFB'],
           'series': [
-            {'name': 'W1', 'data': [
-              {'x': 'Mon', 'y': 10}, {'x': 'Tue', 'y': 40}, {'x': 'Wed', 'y': 30},
-              {'x': 'Thu', 'y': 70}, {'x': 'Fri', 'y': 90}
-            ]},
-            {'name': 'W2', 'data': [
-              {'x': 'Mon', 'y': 50}, {'x': 'Tue', 'y': 20}, {'x': 'Wed', 'y': 60},
-              {'x': 'Thu', 'y': 30}, {'x': 'Fri', 'y': 10}
-            ]},
-            {'name': 'W3', 'data': [
-              {'x': 'Mon', 'y': 80}, {'x': 'Tue', 'y': 60}, {'x': 'Wed', 'y': 20},
-              {'x': 'Thu', 'y': 40}, {'x': 'Fri', 'y': 100}
-            ]},
-            {'name': 'W4', 'data': [
-              {'x': 'Mon', 'y': 30}, {'x': 'Tue', 'y': 90}, {'x': 'Wed', 'y': 50},
-              {'x': 'Thu', 'y': 70}, {'x': 'Fri', 'y': 40}
-            ]},
+            {
+              'name': 'W1',
+              'data': [
+                {'x': 'Mon', 'y': 10},
+                {'x': 'Tue', 'y': 40},
+                {'x': 'Wed', 'y': 30},
+                {'x': 'Thu', 'y': 70},
+                {'x': 'Fri', 'y': 90}
+              ]
+            },
+            {
+              'name': 'W2',
+              'data': [
+                {'x': 'Mon', 'y': 50},
+                {'x': 'Tue', 'y': 20},
+                {'x': 'Wed', 'y': 60},
+                {'x': 'Thu', 'y': 30},
+                {'x': 'Fri', 'y': 10}
+              ]
+            },
+            {
+              'name': 'W3',
+              'data': [
+                {'x': 'Mon', 'y': 80},
+                {'x': 'Tue', 'y': 60},
+                {'x': 'Wed', 'y': 20},
+                {'x': 'Thu', 'y': 40},
+                {'x': 'Fri', 'y': 100}
+              ]
+            },
+            {
+              'name': 'W4',
+              'data': [
+                {'x': 'Mon', 'y': 30},
+                {'x': 'Tue', 'y': 90},
+                {'x': 'Wed', 'y': 50},
+                {'x': 'Thu', 'y': 70},
+                {'x': 'Fri', 'y': 40}
+              ]
+            },
           ],
-          'xaxis': {'type': 'category', 'categories': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']},
+          'xaxis': {
+            'type': 'category',
+            'categories': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+          },
           'legend': {'show': false},
         }),
         ChartSpec('Candlestick', {
@@ -269,14 +382,38 @@ class GalleryPage extends StatelessWidget {
             {
               'name': 'OHLC',
               'data': [
-                {'x': 1609459200000, 'y': [51.98, 56.29, 51.59, 53.85]},
-                {'x': 1609545600000, 'y': [53.66, 54.99, 51.35, 52.95]},
-                {'x': 1609632000000, 'y': [52.76, 57.35, 52.15, 57.03]},
-                {'x': 1609718400000, 'y': [57.00, 58.20, 54.80, 55.10]},
-                {'x': 1609804800000, 'y': [55.20, 59.40, 55.00, 58.90]},
-                {'x': 1609891200000, 'y': [58.80, 60.10, 56.70, 57.20]},
-                {'x': 1609977600000, 'y': [57.10, 61.30, 56.90, 60.80]},
-                {'x': 1610064000000, 'y': [60.70, 62.50, 59.20, 59.60]},
+                {
+                  'x': 1609459200000,
+                  'y': [51.98, 56.29, 51.59, 53.85]
+                },
+                {
+                  'x': 1609545600000,
+                  'y': [53.66, 54.99, 51.35, 52.95]
+                },
+                {
+                  'x': 1609632000000,
+                  'y': [52.76, 57.35, 52.15, 57.03]
+                },
+                {
+                  'x': 1609718400000,
+                  'y': [57.00, 58.20, 54.80, 55.10]
+                },
+                {
+                  'x': 1609804800000,
+                  'y': [55.20, 59.40, 55.00, 58.90]
+                },
+                {
+                  'x': 1609891200000,
+                  'y': [58.80, 60.10, 56.70, 57.20]
+                },
+                {
+                  'x': 1609977600000,
+                  'y': [57.10, 61.30, 56.90, 60.80]
+                },
+                {
+                  'x': 1610064000000,
+                  'y': [60.70, 62.50, 59.20, 59.60]
+                },
               ],
             }
           ],
@@ -291,11 +428,16 @@ class GalleryPage extends StatelessWidget {
             {
               'name': 'Desktops',
               'data': [
-                {'x': 'India', 'y': 218}, {'x': 'USA', 'y': 149},
-                {'x': 'China', 'y': 184}, {'x': 'Japan', 'y': 55},
-                {'x': 'Germany', 'y': 84}, {'x': 'Brazil', 'y': 31},
-                {'x': 'France', 'y': 70}, {'x': 'Canada', 'y': 30},
-                {'x': 'Italy', 'y': 44}, {'x': 'Spain', 'y': 68},
+                {'x': 'India', 'y': 218},
+                {'x': 'USA', 'y': 149},
+                {'x': 'China', 'y': 184},
+                {'x': 'Japan', 'y': 55},
+                {'x': 'Germany', 'y': 84},
+                {'x': 'Brazil', 'y': 31},
+                {'x': 'France', 'y': 70},
+                {'x': 'Canada', 'y': 30},
+                {'x': 'Italy', 'y': 44},
+                {'x': 'Spain', 'y': 68},
               ],
             }
           ],
@@ -349,9 +491,7 @@ class GalleryPage extends StatelessWidget {
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final crossAxis = constraints.maxWidth > 1100
-              ? 2
-              : 1;
+          final crossAxis = constraints.maxWidth > 1100 ? 2 : 1;
           return GridView.count(
             crossAxisCount: crossAxis,
             childAspectRatio: 1.7,

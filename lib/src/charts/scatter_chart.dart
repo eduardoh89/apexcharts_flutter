@@ -65,8 +65,9 @@ class ScatterChartRenderer {
           x = layout.xValueToPixel(p.x ?? i.toDouble());
         }
         final center = Offset(x, layout.yToPixel(p.y));
-        final double radius =
-            isBubble ? _bubbleRadius(p.z, zRatio, options.bubble) : _markerRadius;
+        final double radius = isBubble
+            ? _bubbleRadius(p.z, zRatio, options.bubble)
+            : _markerRadius;
         if (radius <= 0) continue;
         canvas.drawCircle(center, radius, fill);
         canvas.drawCircle(center, radius, stroke);

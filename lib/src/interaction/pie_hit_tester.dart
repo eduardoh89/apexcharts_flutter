@@ -31,7 +31,8 @@ class PieHitTester {
       top = 26;
     }
 
-    final area = Rect.fromLTRB(left, top, size.width - right, size.height - bottom);
+    final area =
+        Rect.fromLTRB(left, top, size.width - right, size.height - bottom);
     final center = area.center;
     final double defaultSize = math.min(area.width, area.height);
     const double strokeWidth = 2;
@@ -51,8 +52,8 @@ class PieHitTester {
 
     // Angle of the pointer, measured clockwise from 12 o'clock (-pi/2), in
     // [0, 2pi) to match the slice sweep accumulation.
-    double angle = math.atan2(local.dy - center.dy, local.dx - center.dx) +
-        math.pi / 2;
+    double angle =
+        math.atan2(local.dy - center.dy, local.dx - center.dx) + math.pi / 2;
     if (angle < 0) angle += 2 * math.pi;
 
     double acc = 0;
@@ -61,9 +62,8 @@ class PieHitTester {
       final sweep = 2 * math.pi * (v / total);
       if (angle >= acc && angle < acc + sweep) {
         final color = options.colors[i % options.colors.length];
-        final label = i < options.labels.length
-            ? options.labels[i]
-            : 'Slice ${i + 1}';
+        final label =
+            i < options.labels.length ? options.labels[i] : 'Slice ${i + 1}';
         // Anchor at the slice mid-angle on the outer radius.
         final mid = -math.pi / 2 + acc + sweep / 2;
         final anchor = Offset(

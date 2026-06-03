@@ -1,4 +1,4 @@
-import 'package:apex_dart/apex_dart.dart';
+import 'package:apexcharts_flutter/apexcharts_flutter.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -13,11 +13,12 @@ void main() {
       final path = MonotoneSpline.buildPath(pts);
       final bounds = path.getBounds();
       for (final p in pts) {
-        expect(bounds.contains(p) ||
-            (p.dx >= bounds.left - 0.01 &&
-                p.dx <= bounds.right + 0.01 &&
-                p.dy >= bounds.top - 0.01 &&
-                p.dy <= bounds.bottom + 0.01),
+        expect(
+            bounds.contains(p) ||
+                (p.dx >= bounds.left - 0.01 &&
+                    p.dx <= bounds.right + 0.01 &&
+                    p.dy >= bounds.top - 0.01 &&
+                    p.dy <= bounds.bottom + 0.01),
             isTrue);
       }
     });

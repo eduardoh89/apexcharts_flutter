@@ -38,6 +38,9 @@ class CartesianHitTester {
         options.type == ApexChartType.bubble) {
       return _intersectNearest(local);
     }
+    if (options.type == ApexChartType.rangeBar) {
+      return _rangeBarHit(local);
+    }
     if (options.type == ApexChartType.bar && options.bar.horizontal) {
       return _sharedHorizontalBar(local);
     }
@@ -51,8 +54,7 @@ class CartesianHitTester {
     final bool banded = options.type == ApexChartType.bar;
 
     for (int j = 0; j < layout.pointCount; j++) {
-      final double x =
-          banded ? layout.xBandCenter(j) : _xForIndex(j);
+      final double x = banded ? layout.xBandCenter(j) : _xForIndex(j);
       final d = (x - local.dx).abs();
       if (d < bestDist) {
         bestDist = d;
@@ -97,8 +99,7 @@ class CartesianHitTester {
   // Horizontal bar: snap to nearest category band on the Y axis.
   ChartHit? _sharedHorizontalBar(Offset local) {
     final double yDivision = layout.plotRect.height / layout.pointCount;
-    int nearest =
-        ((local.dy - layout.plotRect.top) / yDivision).floor();
+    int nearest = ((local.dy - layout.plotRect.top) / yDivision).floor();
     nearest = nearest.clamp(0, layout.pointCount - 1);
 
     final rows = <TooltipSeriesValue>[];
@@ -120,9 +121,76 @@ class CartesianHitTester {
     return ChartHit(
       title: _titleForIndex(nearest),
       rows: rows,
-      anchor: Offset(local.dx.clamp(layout.plotRect.left, layout.plotRect.right),
+      anchor: Offset(
+          local.dx.clamp(layout.plotRect.left, layout.plotRect.right),
           bandCenterY),
     );
+  }
+
+  // Range/timeline bars: ApexCharts gives rangeBar `tooltip.shared:false,
+  // intersect`/`followCursor` (Defaults.rangeBar), so the tooltip belongs to
+  // the SINGLE bar under the cursor. We mirror RangeBarChartRenderer's geometry
+  // exactly (rows on Y, value span on X) so the hit and the bar coincide; the
+  // timeline tooltip shows "seriesName" / "rowLabel: start - end".
+  ChartHit? _rangeBarHit(Offset local) {
+    final int seriesLen = options.series.length;
+    if (seriesLen == 0 || layout.pointCount == 0) return null;
+
+    final double span =
+        (layout.yMax - layout.yMin) == 0 ? 1 : layout.yMax - layout.yMin;
+    double valueToX(num v) =>
+        layout.plotRect.left +
+        ((v - layout.yMin) / span) * layout.plotRect.width;
+
+    final double yDivision = layout.plotRect.height / layout.pointCount;
+    final double barHeight =
+        (yDivision / seriesLen) * options.bar.columnWidthFraction;
+    final double groupPad = (yDivision - barHeight * seriesLen) / 2;
+
+    for (int j = 0; j < layout.pointCount; j++) {
+      final double bandTop = layout.plotRect.top + j * yDivision;
+      for (int i = 0; i < seriesLen; i++) {
+        final s = options.series[i];
+        if (j >= s.points.length) continue;
+        final p = s.points[j];
+        if (p.isNull || !p.isRange) continue;
+
+        final double x1 = valueToX(math.min(p.y, p.yHigh!));
+        final double x2 = valueToX(math.max(p.y, p.yHigh!));
+        final double top = bandTop + groupPad + i * barHeight;
+        final rect = Rect.fromLTRB(x1, top, x2, top + barHeight);
+        if (!rect.contains(local)) continue;
+
+        final color = s.color ?? options.colors[i % options.colors.length];
+        final String rowLabel = p.label ??
+            (j < options.categories.length
+                ? options.categories[j]
+                : '${j + 1}');
+        final num lo = math.min(p.y, p.yHigh!);
+        final num hi = math.max(p.y, p.yHigh!);
+        final String start = options.xAxisType == ApexXAxisType.datetime
+            ? FormatValue.date(lo, options.tooltipXFormat)
+            : FormatValue.number(lo);
+        final String end = options.xAxisType == ApexXAxisType.datetime
+            ? FormatValue.date(hi, options.tooltipXFormat)
+            : FormatValue.number(hi);
+
+        return ChartHit(
+          title: s.name.isEmpty ? 'Series ${i + 1}' : s.name,
+          rows: [
+            TooltipSeriesValue(
+              color: color,
+              seriesName: rowLabel,
+              formattedValue: '$start - $end',
+              highlighted: true,
+            ),
+          ],
+          // Anchor at the cursor (followCursor), kept inside the bar.
+          anchor: Offset(local.dx, rect.center.dy),
+        );
+      }
+    }
+    return null;
   }
 
   // Intersect mode (scatter): nearest single marker within a radius.
@@ -155,11 +223,9 @@ class CartesianHitTester {
 
     final s = options.series[bestSeries];
     final p = s.points[bestIndex];
-    final color =
-        s.color ?? options.colors[bestSeries % options.colors.length];
-    final String title = p.x == null
-        ? '${bestIndex + 1}'
-        : FormatValue.number(p.x!);
+    final color = s.color ?? options.colors[bestSeries % options.colors.length];
+    final String title =
+        p.x == null ? '${bestIndex + 1}' : FormatValue.number(p.x!);
 
     return ChartHit(
       title: title,

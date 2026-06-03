@@ -17,7 +17,8 @@ import 'chart_hit.dart';
 ///   * series row: padding `0 10px` (4px bottom on the last), 14px text,
 ///     16px marker, value `font-weight: 600`
 class TooltipOverlay extends StatelessWidget {
-  const TooltipOverlay({super.key, required this.hit, required this.fontFamily});
+  const TooltipOverlay(
+      {super.key, required this.hit, required this.fontFamily});
 
   final ChartHit hit;
   final String? fontFamily;

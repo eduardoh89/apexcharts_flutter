@@ -28,7 +28,8 @@ class RangeBarChartRenderer {
     // Map a value (start/end) to an x-pixel using the value-axis range, the
     // same mapping horizontal bars use (value axis is X).
     double valueToX(num v) {
-      final span = (layout.yMax - layout.yMin) == 0 ? 1 : layout.yMax - layout.yMin;
+      final span =
+          (layout.yMax - layout.yMin) == 0 ? 1 : layout.yMax - layout.yMin;
       final t = (v - layout.yMin) / span;
       return layout.plotRect.left + t * layout.plotRect.width;
     }
@@ -47,8 +48,7 @@ class RangeBarChartRenderer {
         final p = series.points[j];
         if (p.isNull || !p.isRange) continue;
 
-        final color =
-            series.color ?? options.colors[i % options.colors.length];
+        final color = series.color ?? options.colors[i % options.colors.length];
 
         final double x1 = valueToX(math.min(p.y, p.yHigh!));
         final double x2 = valueToX(math.max(p.y, p.yHigh!));

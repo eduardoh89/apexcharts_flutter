@@ -1,83 +1,123 @@
-# apex_dart
+# apexcharts_flutter
 
 A **native Flutter/Dart port of [ApexCharts](https://github.com/apexcharts/apexcharts.js) v4.7.0** — the last release published under the MIT license.
 
-`apex_dart` reimplements ApexCharts' rendering on Flutter's `CustomPainter`/
-`Canvas` instead of SVG/DOM, so it runs on **macOS, web, Android, Windows and
-iOS** with no WebView or JS engine.
+`apexcharts_flutter` reimplements ApexCharts' rendering on Flutter's
+`CustomPainter`/`Canvas` instead of SVG/DOM, so it runs natively on **macOS,
+web, Android, Windows and iOS** with **no WebView, no JS engine, and zero
+runtime dependencies**.
 
-> **Why a port and not a wrapper?** ApexCharts is a browser SVG library and
-> does not run on Flutter desktop (no macOS WebView). Porting the math + draw
-> logic to `CustomPainter` gives identical visuals natively on every platform.
+> ⚠️ **Unofficial.** This is an independent, community port. It is **not**
+> affiliated with or endorsed by the ApexCharts project. It is based
+> **exclusively** on ApexCharts v4.7.0 (MIT); v5+ moved to a non-MIT license
+> and is not used here.
 
-## Licensing
+## 🔴 Live demo
 
-This package is based **exclusively** on ApexCharts **v4.7.0** (MIT). v5+ moved
-to a non-MIT dual license and is **not** used here. See [`NOTICE`](NOTICE) and
-[`LICENSE`](LICENSE). Original copyright (c) 2018 ApexCharts is retained.
+A web build of the example gallery (all 13 chart types) is published via GitHub
+Pages:
 
-## Porting method (golden-driven)
+**https://eduardoh89.github.io/apexcharts_flutter/**
 
-The port is incremental and validated against the real library:
+## Features
+
+- **13 chart types:** line, area, bar (grouped / stacked / horizontal), pie,
+  donut, scatter, bubble, range bar / timeline, candlestick / OHLC, radar,
+  radial bar / gauge, heatmap, treemap.
+- **Interactive:** tooltips (shared & intersect) on every type, crosshair,
+  active markers, drag/wheel zoom + pan with a toolbar and smooth morphing,
+  mount animations.
+- **Axes:** category / datetime / numeric x-axes, linear & logarithmic y-axes,
+  "nice" ticks, value formatters, axis titles.
+- **Native everywhere:** pure `CustomPainter`. No WebView, no JS, no platform
+  channels.
+
+## Install
+
+```yaml
+dependencies:
+  apexcharts_flutter: ^0.1.0
+```
+
+```dart
+import 'package:apexcharts_flutter/apexcharts_flutter.dart';
+```
+
+## Usage
+
+The API mirrors ApexCharts' options object, passed as a plain map and parsed
+into a typed model:
+
+```dart
+import 'package:apexcharts_flutter/apexcharts_flutter.dart';
+import 'package:flutter/material.dart';
+
+class Demo extends StatelessWidget {
+  const Demo({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 320,
+      child: ApexChart(
+        options: ApexOptions.fromJson({
+          'chart': {'type': 'line'},
+          'stroke': {'curve': 'smooth', 'width': 3},
+          'colors': ['#008FFB'],
+          'series': [
+            {'name': 'Sales', 'data': [10, 41, 35, 51, 49, 62, 69, 91, 148]},
+          ],
+          'xaxis': {
+            'categories': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+          },
+        }),
+      ),
+    );
+  }
+}
+```
+
+See [`example/`](example/) for a gallery covering every chart type, zoom/pan,
+and a datetime area demo.
+
+## Why a port and not a wrapper?
+
+ApexCharts is a browser SVG library and does not run on Flutter desktop (there
+is no macOS WebView). Porting the math + draw logic to `CustomPainter` gives
+identical visuals natively on every platform, with no embedded browser.
+
+## Fidelity & method (golden-driven)
+
+The port is validated against the real library: each chart's options are
+rendered both by genuine ApexCharts v4.7.0 (headless Chromium via Puppeteer)
+and by this package, then compared with a perceptual image diff.
 
 ```
 fixture (JSON options)
-      │
-      ├──► tool/render_reference.mjs ──► ApexCharts v4.7.0 PNG  (reference)
-      │
-      └──► apex_dart ApexChart widget ─► Flutter golden PNG
-                                              │
-                                  perceptual diff (tolerance)
+      ├──► ApexCharts v4.7.0 (Puppeteer) ──► reference PNG
+      └──► apexcharts_flutter ApexChart  ──► candidate PNG
+                                              └─ perceptual diff (tolerance)
 ```
 
-No module is "done" until its golden matches the ApexCharts reference within a
-perceptual tolerance.
+Parity is **perceptual, not bit-exact**: SVG (Chromium) vs Skia anti-aliasing
+always differ slightly at fill edges. Geometry, colors, ticks and data labels
+match the reference.
 
-## Status
+## Licensing
 
-| Phase | Scope | State |
-|-------|-------|-------|
-| 0 | Fork v4.7.0 + scaffold | ✅ |
-| 1 | Visual-diff harness + 6 fixtures | ✅ |
-| 2 | Foundation: utils, scales, axes, svg, options | ✅ |
-| 3 | Line chart end-to-end (line/area, straight/smooth/step) | ✅ |
-| 4 | Bar (grouped) + Pie/Donut | ✅ |
-| 5 | area / scatter / stacked / horizontal + zoom/pan + tooltips | ✅ |
-| 5b | bubble, rangeBar/timeline, logarithmic axis | ✅ |
-| 6 | radialBar/gauge, radar | ✅ |
-| 7 | heatmap, candlestick/OHLC, treemap | ✅ |
+MIT. This package is based **exclusively** on ApexCharts **v4.7.0** (MIT). The
+original copyright (© 2018 ApexCharts) is retained in [`LICENSE`](LICENSE)
+alongside the port's copyright, as the MIT license requires. See
+[`NOTICE`](NOTICE) for the exact upstream tag and commit SHA used.
 
-Remaining backlog: multiple y-axes, tooltip dark theme + `intersect`,
-distributed (per-bar/tile) colors, stacked-total labels.
+## Contributing
 
-Line charts diff **~7–12%** against the ApexCharts reference; bar/pie/donut
-**~25–37%** (higher because solid-fill edges double-count any sub-pixel offset
-between the SVG and Skia rasterizers). In all cases the geometry, colours,
-y-axis ticks and data labels match the reference — the residual is
-anti-aliasing, verifiable via the 3-up diff images in `test/golden/failures/`.
-
-## Layout
-
-```
-lib/src/utils/      math, color, range/niceScale  (ported, tested)
-lib/src/options/    ApexOptions-equivalent config model
-lib/src/svg/        CustomPainter primitives
-lib/src/modules/    scales, axes, grid, legend, tooltip, datalabels
-lib/src/charts/     line, area, bar, pie/donut, ...
-reference/          vendored MIT v4.7.0 source (porting reference, not shipped)
-tool/               puppeteer reference renderer + fixtures
-test/golden/        reference PNGs + Flutter goldens
-```
-
-## Development
+Contributions are welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md). In short:
+this is a faithful transpilation, so every change should be traceable to the
+upstream ApexCharts v4.7.0 source and verified against the real library.
 
 ```bash
-# from the package root
 flutter pub get
 flutter analyze
-flutter test                      # unit + golden tests
-flutter test --update-goldens     # regenerate goldens after intentional change
-
-# regenerate ApexCharts reference PNGs (requires node)
-cd tool && npm install && node render_reference.mjs
+flutter test
 ```

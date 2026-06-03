@@ -45,8 +45,8 @@ class ChartFixture {
         .listSync()
         .whereType<File>()
         .where((f) => f.path.endsWith('.json'))
-        .map((f) =>
-            ChartFixture.fromJson(jsonDecode(f.readAsStringSync()) as Map<String, dynamic>))
+        .map((f) => ChartFixture.fromJson(
+            jsonDecode(f.readAsStringSync()) as Map<String, dynamic>))
         .toList()
       ..sort((a, b) => a.name.compareTo(b.name));
   }

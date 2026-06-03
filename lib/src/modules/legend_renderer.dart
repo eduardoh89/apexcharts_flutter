@@ -68,13 +68,13 @@ class LegendRenderer {
     final pos = options.legend.position;
     final names = _names(options);
 
-    final labeller =
-        TextDrawer(color: _textColor, fontFamily: options.fontFamily, fontSize: 12);
+    final labeller = TextDrawer(
+        color: _textColor, fontFamily: options.fontFamily, fontSize: 12);
 
     switch (pos) {
       case ApexLegendPosition.bottom:
-        _paintHorizontal(
-            canvas, canvasSize, options, names, labeller, canvasSize.height - 18);
+        _paintHorizontal(canvas, canvasSize, options, names, labeller,
+            canvasSize.height - 18);
       case ApexLegendPosition.top:
         _paintHorizontal(canvas, canvasSize, options, names, labeller, 6);
       case ApexLegendPosition.right:
@@ -156,7 +156,8 @@ class LegendRenderer {
   }
 
   static void _marker(Canvas canvas, Offset topLeft, Color color) {
-    final rect = Rect.fromLTWH(topLeft.dx, topLeft.dy, _markerSize, _markerSize);
+    final rect =
+        Rect.fromLTWH(topLeft.dx, topLeft.dy, _markerSize, _markerSize);
     canvas.drawRRect(
       RRect.fromRectAndRadius(rect, const Radius.circular(3)),
       Paint()..color = color,

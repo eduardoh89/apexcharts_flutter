@@ -1,7 +1,8 @@
-/// apex_dart — a native Flutter/Dart port of ApexCharts v4.7.0 (MIT).
+/// apexcharts_flutter — a native Flutter/Dart port of ApexCharts v4.7.0 (MIT).
 ///
-/// Public API surface. Modules are added incrementally as the port
-/// progresses (see NOTICE and the package README for the porting plan).
+/// Public API surface. This is an unaffiliated, native reimplementation of
+/// ApexCharts on Flutter's `CustomPainter`/`Canvas` (no WebView/JS). See
+/// NOTICE and the package README for licensing and the porting method.
 library;
 
 export 'src/apex_chart.dart';

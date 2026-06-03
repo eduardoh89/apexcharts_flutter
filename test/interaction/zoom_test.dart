@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-import 'package:apex_dart/apex_dart.dart';
+import 'package:apexcharts_flutter/apexcharts_flutter.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -15,7 +15,10 @@ void main() {
     },
     'colors': ['#008FFB'],
     'series': [
-      {'name': 'A', 'data': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
+      {
+        'name': 'A',
+        'data': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+      }
     ],
     'xaxis': {
       'categories': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -73,12 +76,20 @@ void main() {
       // Same data but without autoScaleYaxis: zooming must NOT move the y-axis,
       // so it never snaps in discrete steps while panning.
       final fixed = ApexOptions.fromJson({
-        'chart': {'type': 'line', 'zoom': {'enabled': true}},
+        'chart': {
+          'type': 'line',
+          'zoom': {'enabled': true}
+        },
         'colors': ['#008FFB'],
         'series': [
-          {'name': 'A', 'data': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
+          {
+            'name': 'A',
+            'data': [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+          }
         ],
-        'xaxis': {'categories': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]},
+        'xaxis': {
+          'categories': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        },
       });
       final full = CartesianLayout.compute(fixed, size);
       final zoomed = CartesianLayout.compute(
@@ -160,7 +171,10 @@ void main() {
             'series': t == 'pie'
                 ? [1, 2]
                 : [
-                    {'name': 'A', 'data': [1, 2, 3]}
+                    {
+                      'name': 'A',
+                      'data': [1, 2, 3]
+                    }
                   ],
             if (t == 'pie') 'labels': ['a', 'b'],
           });
@@ -171,9 +185,15 @@ void main() {
 
     test('explicit zoom.enabled overrides default', () {
       final o = ApexOptions.fromJson({
-        'chart': {'type': 'bar', 'zoom': {'enabled': true}},
+        'chart': {
+          'type': 'bar',
+          'zoom': {'enabled': true}
+        },
         'series': [
-          {'name': 'A', 'data': [1, 2, 3]}
+          {
+            'name': 'A',
+            'data': [1, 2, 3]
+          }
         ],
       });
       expect(o.zoom.enabled, isTrue);

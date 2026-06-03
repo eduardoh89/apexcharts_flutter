@@ -1,0 +1,57 @@
+name: Deploy example to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment; cancel in-progress runs for the same ref.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Provide the example's Inter font
+        # example/fonts/ is gitignored (it's a copy of the test font), so
+        # recreate it before building the web example.
+        run: |
+          mkdir -p example/fonts
+          cp test/assets/fonts/Inter-Variable.ttf example/fonts/Inter-Variable.ttf
+
+      - name: Build web example
+        working-directory: example
+        # base-href must match the Pages sub-path (the repo name).
+        run: |
+          flutter pub get
+          flutter build web --release --base-href "/apexcharts_flutter/"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: example/build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
