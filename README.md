@@ -3,9 +3,9 @@
 A **native Flutter/Dart port of [ApexCharts](https://github.com/apexcharts/apexcharts.js) v4.7.0** — the last release published under the MIT license.
 
 `apexcharts_flutter` reimplements ApexCharts' rendering on Flutter's
-`CustomPainter`/`Canvas` instead of SVG/DOM, so it runs natively on **macOS,
-web, Android, Windows and iOS** with **no WebView, no JS engine, and zero
-runtime dependencies**.
+`CustomPainter`/`Canvas` instead of SVG/DOM, so it runs natively on **every
+Flutter platform — Android, iOS, web, Windows, macOS and Linux** — with **no
+WebView, no JS engine, and zero runtime dependencies**.
 
 > ⚠️ **Unofficial.** This is an independent, community port. It is **not**
 > affiliated with or endorsed by the ApexCharts project. It is based
@@ -31,6 +31,16 @@ Pages:
   "nice" ticks, value formatters, axis titles.
 - **Native everywhere:** pure `CustomPainter`. No WebView, no JS, no platform
   channels.
+
+## Platform support
+
+Because rendering is pure Dart on `CustomPainter`/`Canvas` (no platform
+channels, no native plugins, no WebView), the package works on **all six
+Flutter targets** with the same code and identical visuals:
+
+| Android | iOS | Web | Windows | macOS | Linux |
+|:-------:|:---:|:---:|:-------:|:-----:|:-----:|
+|    ✅    |  ✅  |  ✅  |    ✅    |   ✅   |   ✅   |
 
 ## Install
 

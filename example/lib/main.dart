@@ -6,7 +6,8 @@ import 'area_datetime_demo.dart';
 void main() => runApp(const GalleryApp());
 
 /// A gallery that renders every apexcharts_flutter chart type so the port can
-/// be eyeballed on any platform (macOS / web / Android / Windows).
+/// be eyeballed on any Flutter platform (Android, iOS, web, Windows, macOS,
+/// Linux).
 class GalleryApp extends StatelessWidget {
   const GalleryApp({super.key});
 

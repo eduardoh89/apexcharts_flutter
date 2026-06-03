@@ -4,8 +4,8 @@
 
 Initial release — a native Flutter/Dart port of ApexCharts v4.7.0 (the last MIT
 release), rendered on `CustomPainter`/`Canvas` with **zero runtime
-dependencies** (no WebView, no JS engine). Runs on macOS, web, Android, Windows
-and iOS.
+dependencies** (no WebView, no JS engine). Runs on every Flutter platform:
+Android, iOS, web, Windows, macOS and Linux.
 
 ### Chart types (13)
 

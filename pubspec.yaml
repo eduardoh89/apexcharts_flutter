@@ -1,8 +1,9 @@
 name: apexcharts_flutter
 description: >-
   Native Flutter/Dart port of ApexCharts v4.7.0 (last MIT release). A
-  CustomPainter-based charting engine with 13 chart types that runs on macOS,
-  web, Android, Windows and iOS without any JS/WebView dependency.
+  CustomPainter-based charting engine with 13 chart types that runs on every
+  Flutter platform (Android, iOS, web, Windows, macOS, Linux) without any
+  JS/WebView dependency.
 version: 0.1.0
 homepage: https://github.com/eduardoh89/apexcharts_flutter
 repository: https://github.com/eduardoh89/apexcharts_flutter
