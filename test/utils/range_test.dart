@@ -15,6 +15,29 @@ void main() {
       }
     });
 
+    test('resolves FP-dirty deep-zoom ranges fast (no freeze regression)', () {
+      // Repeated zoom with autoScaleYaxis feeds ranges whose bounds carry many
+      // noisy decimals (e.g. 28.945454547454545). These previously made a
+      // single niceScale call take tens of seconds (getGCD precision blowup),
+      // freezing the chart. Each call must now be effectively instant.
+      final ranges = <List<num>>[
+        [28.340000002, 28.945454547454545],
+        [30.45170000000012, 30.46220000000031],
+        [12.333333333333334, 12.999999999999996],
+        [0.10000000000000009, 0.30000000000000004],
+      ];
+      for (final r in ranges) {
+        final sw = Stopwatch()..start();
+        final s = NiceScale.niceScale(r[0], r[1], maxTicks: 18);
+        sw.stop();
+        expect(sw.elapsedMilliseconds, lessThan(100),
+            reason:
+                'niceScale(${r[0]}..${r[1]}) took ${sw.elapsedMilliseconds}ms');
+        expect(s.result.length, lessThan(1000));
+        expect(s.result.length, greaterThanOrEqualTo(2));
+      }
+    });
+
     test('snaps a near-zero min down to zero (proximity ratio)', () {
       // yMin/range = 5/100 = 0.05 < 0.15 → snaps to 0.
       final r = NiceScale.niceScale(5, 105);

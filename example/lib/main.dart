@@ -471,24 +471,10 @@ class GalleryPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'apex_dart — ApexCharts v4.7.0 native port  ·  hover any chart for tooltips',
+          'apexcharts_flutter — ApexCharts v4.7.0 native port  ·  hover any chart for tooltips',
         ),
         backgroundColor: const Color(0xFF008FFB),
         foregroundColor: Colors.white,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: TextButton(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const AreaDatetimeDemo(),
-                ),
-              ),
-              style: TextButton.styleFrom(foregroundColor: Colors.white),
-              child: const Text('Area-Datetime demo →'),
-            ),
-          ),
-        ],
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -500,40 +486,53 @@ class GalleryPage extends StatelessWidget {
             mainAxisSpacing: 16,
             crossAxisSpacing: 16,
             children: [
+              // Interactive zoom/pan showcase: the ApexCharts area-datetime
+              // demo replica, embedded inline (drag/wheel to zoom, range
+              // buttons drive ApexChartController.zoomX).
+              _card(
+                'Area — Datetime (zoom / pan · range buttons)',
+                const AreaDatetimeDemo(),
+              ),
               for (final spec in _specs)
-                Card(
-                  elevation: 1,
-                  color: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          spec.title,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15,
-                            color: Color(0xFF373D3F),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Expanded(
-                          child: ApexChart(
-                            options: ApexOptions.fromJson(spec.json)
-                                .copyWith(fontFamily: 'Inter'),
-                          ),
-                        ),
-                      ],
-                    ),
+                _card(
+                  spec.title,
+                  ApexChart(
+                    options: ApexOptions.fromJson(spec.json)
+                        .copyWith(fontFamily: 'Inter'),
                   ),
                 ),
             ],
           );
         },
+      ),
+    );
+  }
+
+  /// A titled white card wrapping a chart, used for every gallery tile.
+  Widget _card(String title, Widget chart) {
+    return Card(
+      elevation: 1,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+                color: Color(0xFF373D3F),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Expanded(child: chart),
+          ],
+        ),
       ),
     );
   }

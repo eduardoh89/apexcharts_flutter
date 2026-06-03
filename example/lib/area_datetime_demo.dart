@@ -90,46 +90,30 @@ class _AreaDatetimeDemoState extends State<AreaDatetimeDemo> {
       ('ALL', () => _range('ALL', '2012-01-23', '2013-02-27')),
     ];
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Area — Datetime (ApexCharts demo replica)'),
-        backgroundColor: const Color(0xFF008FFB),
-        foregroundColor: Colors.white,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+    // Embeddable card content (no Scaffold): the range buttons plus the
+    // zoomable area chart. Lives inline in the main gallery grid.
+    return Column(
+      children: [
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 6,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                for (final (id, cb) in buttons)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 3),
-                    child: _RangeButton(
-                      label: id,
-                      active: _active == id,
-                      onTap: cb,
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: Card(
-                color: Colors.white,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: ApexChart(
-                    options: _options,
-                    controller: _controller,
-                  ),
-                ),
+            for (final (id, cb) in buttons)
+              _RangeButton(
+                label: id,
+                active: _active == id,
+                onTap: cb,
               ),
-            ),
           ],
         ),
-      ),
+        const SizedBox(height: 10),
+        Expanded(
+          child: ApexChart(
+            options: _options,
+            controller: _controller,
+          ),
+        ),
+      ],
     );
   }
 }

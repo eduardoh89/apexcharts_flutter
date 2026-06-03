@@ -24,6 +24,19 @@ void main() {
     test('decimal gcd via scaling', () {
       expect(ApexMath.getGCD(0.5, 0.25), closeTo(0.25, 1e-9));
     });
+    test('caps precision to ~7 significant digits (perf regression)', () {
+      // FP-dirty operands (many noisy decimals) must NOT scale up to
+      // 10^15-size integers — that made the Euclidean loop and the downstream
+      // niceScale tick loop crawl for seconds, freezing the chart on deep zoom.
+      // ApexCharts' getGCD(a, b, p = 7) bounds the scaled integers; verify the
+      // call returns quickly and finitely.
+      final sw = Stopwatch()..start();
+      final g = ApexMath.getGCD(28.340000002, 28.945454547454545);
+      sw.stop();
+      expect(g.isFinite, isTrue);
+      expect(g >= 0, isTrue);
+      expect(sw.elapsedMilliseconds, lessThan(50));
+    });
   });
 
   group('ApexMath.mod', () {
