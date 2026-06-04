@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.2
+
+- Performance: hovering a dense chart no longer repaints the whole chart. The
+  crosshair, active markers and drag-select rectangle now live in their own
+  overlay layer, so a pointer move repaints only that cheap layer instead of
+  re-laying-out the grid labels and rebuilding the series spline every frame.
+- Performance: axis/legend/data-label text layout is now cached (keyed by text +
+  style), so the repeated `TextPainter.layout()` cost during mount/pan/zoom
+  animations is paid once per unique label rather than every frame.
+
 ## 0.1.1
 
 - Fix a freeze on repeated zoom for charts with `zoom.autoScaleYaxis` (e.g. the

@@ -456,15 +456,12 @@ class _ApexChartState extends State<ApexChart> with TickerProviderStateMixin {
     final bool morphing = _zoomAnim.isAnimating && _zoomFrom != null;
     final painter = _ApexChartPainter(
       widget.options,
-      hit: _hit,
       window: _window,
       // Animated y bounds only apply outside a morph and when autoscaling.
       yOverride: (!morphing && _yAutoScale) ? _yDisplay : null,
       morphFrom: morphing ? _zoomFrom : null,
       morphTo: morphing ? _zoomTo : null,
       morphT: morphing ? _zoomT : 1,
-      selectStartX: _selectStartX,
-      selectCurrentX: _selectCurrentX,
       animation: _anim,
       onLayout: (layout, size) {
         _lastLayout = layout;
@@ -501,6 +498,23 @@ class _ApexChartState extends State<ApexChart> with TickerProviderStateMixin {
         child: Stack(
           children: [
             Positioned.fill(child: chart),
+            // Hover crosshair/markers + drag-select rectangle live in their own
+            // top layer so a mouse move repaints only this lightweight overlay
+            // — never the grid (2N text layouts) or the series spline.
+            Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(
+                  painter: _OverlayPainter(
+                    hit: _hit,
+                    layout: _lastLayout,
+                    isCartesian: _isCartesian,
+                    selectStartX: _selectStartX,
+                    selectCurrentX: _selectCurrentX,
+                  ),
+                  size: Size.infinite,
+                ),
+              ),
+            ),
             if (_isCartesian &&
                 widget.options.zoom.enabled &&
                 widget.options.zoom.showToolbar)
@@ -574,20 +588,16 @@ typedef _LayoutCallback = void Function(CartesianLayout? layout, Size size);
 class _ApexChartPainter extends CustomPainter {
   _ApexChartPainter(
     this.options, {
-    this.hit,
     this.window,
     this.yOverride,
     this.morphFrom,
     this.morphTo,
     this.morphT = 1,
-    this.selectStartX,
-    this.selectCurrentX,
     required this.animation,
     required this.onLayout,
   }) : super(repaint: animation);
 
   final ApexOptions options;
-  final ChartHit? hit;
   final XWindow? window;
 
   /// Animated y-axis bounds for a panning `autoScaleYaxis` chart, so the axis
@@ -603,8 +613,6 @@ class _ApexChartPainter extends CustomPainter {
   final XWindow? morphTo;
   final double morphT;
 
-  final double? selectStartX;
-  final double? selectCurrentX;
   final Animation<double> animation;
   final _LayoutCallback onLayout;
 
@@ -667,9 +675,6 @@ class _ApexChartPainter extends CustomPainter {
       RadarChartRenderer.paint(canvas, size, options);
     }
     LegendRenderer.paint(canvas, size, options);
-    if (t >= 0.99 && hit != null) {
-      HoverPainter.paint(canvas, hit!, null);
-    }
   }
 
   void _paintRadialBar(Canvas canvas, Size size) {
@@ -797,37 +802,9 @@ class _ApexChartPainter extends CustomPainter {
           Rect.fromLTRB(0, 0, size.width, layout.plotRect.bottom + 1));
       DataLabelsRenderer.paint(canvas, layout, options);
       canvas.restore();
-      // Hover/crosshair stays clipped to the plot.
-      if (hit != null) {
-        canvas.save();
-        canvas.clipRect(layout.plotRect.inflate(1));
-        HoverPainter.paint(canvas, hit!, layout);
-        canvas.restore();
-      }
     }
 
     LegendRenderer.paint(canvas, size, options);
-
-    // Selection rectangle (drag-to-zoom) — ApexCharts xcrosshairs selection.
-    if (selectStartX != null && selectCurrentX != null) {
-      final lo =
-          selectStartX! < selectCurrentX! ? selectStartX! : selectCurrentX!;
-      final hi =
-          selectStartX! < selectCurrentX! ? selectCurrentX! : selectStartX!;
-      final rect =
-          Rect.fromLTRB(lo, layout.plotRect.top, hi, layout.plotRect.bottom);
-      canvas.drawRect(
-        rect,
-        Paint()..color = const Color(0x1A008FFB),
-      );
-      canvas.drawRect(
-        rect,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1
-          ..color = const Color(0x66008FFB),
-      );
-    }
   }
 
   void _paintPie(Canvas canvas, Size size) {
@@ -846,22 +823,80 @@ class _ApexChartPainter extends CustomPainter {
       PieChartRenderer.paint(canvas, size, options);
     }
     LegendRenderer.paint(canvas, size, options);
-    if (t >= 0.99 && hit != null) {
-      HoverPainter.paint(canvas, hit!, null);
-    }
   }
 
   @override
   bool shouldRepaint(covariant _ApexChartPainter oldDelegate) =>
       oldDelegate.options != options ||
-      oldDelegate.hit != hit ||
       oldDelegate.window != window ||
       oldDelegate.morphFrom != morphFrom ||
       oldDelegate.morphTo != morphTo ||
       oldDelegate.morphT != morphT ||
-      oldDelegate.selectStartX != selectStartX ||
-      oldDelegate.selectCurrentX != selectCurrentX ||
       oldDelegate.animation != animation;
 }
 
 enum _CartesianKind { line, bar, scatter, rangeBar, candlestick }
+
+/// Top overlay layer: the hover crosshair/markers (any chart family) and the
+/// cartesian drag-select rectangle. Kept separate from [_ApexChartPainter] so a
+/// pointer move repaints only these cheap affordances instead of the whole
+/// chart (grid text layout + series path), the dominant FPS cost on dense
+/// charts. Reads the [CartesianLayout] captured during the base paint.
+class _OverlayPainter extends CustomPainter {
+  _OverlayPainter({
+    required this.hit,
+    required this.layout,
+    required this.isCartesian,
+    required this.selectStartX,
+    required this.selectCurrentX,
+  });
+
+  final ChartHit? hit;
+  final CartesianLayout? layout;
+  final bool isCartesian;
+  final double? selectStartX;
+  final double? selectCurrentX;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (isCartesian && layout != null) {
+      // Hover/crosshair stays clipped to the plot (matches the base painter's
+      // former clip).
+      if (hit != null) {
+        canvas.save();
+        canvas.clipRect(layout!.plotRect.inflate(1));
+        HoverPainter.paint(canvas, hit!, layout);
+        canvas.restore();
+      }
+
+      // Selection rectangle (drag-to-zoom) — ApexCharts xcrosshairs selection.
+      if (selectStartX != null && selectCurrentX != null) {
+        final lo =
+            selectStartX! < selectCurrentX! ? selectStartX! : selectCurrentX!;
+        final hi =
+            selectStartX! < selectCurrentX! ? selectCurrentX! : selectStartX!;
+        final rect = Rect.fromLTRB(
+            lo, layout!.plotRect.top, hi, layout!.plotRect.bottom);
+        canvas.drawRect(rect, Paint()..color = const Color(0x1A008FFB));
+        canvas.drawRect(
+          rect,
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1
+            ..color = const Color(0x66008FFB),
+        );
+      }
+    } else if (hit != null) {
+      // Pie / radar / tile families: markers only (no layout/crosshair).
+      HoverPainter.paint(canvas, hit!, null);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _OverlayPainter oldDelegate) =>
+      oldDelegate.hit != hit ||
+      oldDelegate.layout != layout ||
+      oldDelegate.isCartesian != isCartesian ||
+      oldDelegate.selectStartX != selectStartX ||
+      oldDelegate.selectCurrentX != selectCurrentX;
+}

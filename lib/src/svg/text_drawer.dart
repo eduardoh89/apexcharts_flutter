@@ -20,7 +20,20 @@ class TextDrawer {
   final FontWeight fontWeight;
   final String? fontFamily;
 
+  /// Process-wide cache of laid-out [TextPainter]s, keyed by text + style.
+  /// Axis/legend/data labels re-render the same strings every frame during the
+  /// mount/pan/zoom animations; caching the `.layout()` (the dominant cost in
+  /// Skia text) avoids paying for it on every repaint. A [TextPainter] is only
+  /// read (sized / painted at an offset) after layout, so sharing one instance
+  /// across draws within a single-threaded paint is safe.
+  static final Map<_TextKey, TextPainter> _cache = {};
+  static const int _maxCacheEntries = 512;
+
   TextPainter _painter(String text) {
+    final key = _TextKey(text, fontSize, color, fontWeight, fontFamily);
+    final cached = _cache[key];
+    if (cached != null) return cached;
+
     final tp = TextPainter(
       text: TextSpan(
         text: text,
@@ -34,6 +47,12 @@ class TextDrawer {
       textDirection: TextDirection.ltr,
       maxLines: 1,
     )..layout();
+
+    // Bound the cache so long-lived charts with churning labels (datetime
+    // ticks, live data) can't grow it without limit. A flat clear is fine —
+    // misses just re-layout, which is the pre-cache cost.
+    if (_cache.length >= _maxCacheEntries) _cache.clear();
+    _cache[key] = tp;
     return tp;
   }
 
@@ -86,4 +105,35 @@ class TextDrawer {
     tp.paint(canvas, Offset(ox, oy));
     canvas.restore();
   }
+}
+
+/// Cache key for [TextDrawer]'s laid-out [TextPainter]s: the text plus every
+/// style input that affects its layout/paint.
+class _TextKey {
+  const _TextKey(
+    this.text,
+    this.fontSize,
+    this.color,
+    this.fontWeight,
+    this.fontFamily,
+  );
+
+  final String text;
+  final double fontSize;
+  final Color color;
+  final FontWeight fontWeight;
+  final String? fontFamily;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _TextKey &&
+      other.text == text &&
+      other.fontSize == fontSize &&
+      other.color == color &&
+      other.fontWeight == fontWeight &&
+      other.fontFamily == fontFamily;
+
+  @override
+  int get hashCode =>
+      Object.hash(text, fontSize, color, fontWeight, fontFamily);
 }
