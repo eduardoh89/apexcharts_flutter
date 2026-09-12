@@ -170,10 +170,10 @@ class CartesianHitTester {
         final num hi = math.max(p.y, p.yHigh!);
         final String start = options.xAxisType == ApexXAxisType.datetime
             ? FormatValue.date(lo, options.tooltipXFormat)
-            : FormatValue.number(lo);
+            : FormatValue.formatted(lo, options.xLabelFormat);
         final String end = options.xAxisType == ApexXAxisType.datetime
             ? FormatValue.date(hi, options.tooltipXFormat)
-            : FormatValue.number(hi);
+            : FormatValue.formatted(hi, options.xLabelFormat);
 
         return ChartHit(
           title: s.name.isEmpty ? 'Series ${i + 1}' : s.name,
@@ -224,8 +224,9 @@ class CartesianHitTester {
     final s = options.series[bestSeries];
     final p = s.points[bestIndex];
     final color = s.color ?? options.colors[bestSeries % options.colors.length];
-    final String title =
-        p.x == null ? '${bestIndex + 1}' : FormatValue.number(p.x!);
+    final String title = p.x == null
+        ? '${bestIndex + 1}'
+        : FormatValue.formatted(p.x!, options.xLabelFormat);
 
     return ChartHit(
       title: title,
@@ -283,7 +284,7 @@ class CartesianHitTester {
         final x = s.points[index].x!;
         return options.xAxisType == ApexXAxisType.datetime
             ? FormatValue.date(x, options.tooltipXFormat)
-            : FormatValue.number(x);
+            : FormatValue.formatted(x, options.xLabelFormat);
       }
     }
     return '${index + 1}';

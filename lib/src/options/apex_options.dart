@@ -409,6 +409,20 @@ class ApexMarkers {
   }
 }
 
+/// Merges two JSON option maps key-by-key, [primary] winning per-key over
+/// [fallback] — unlike `primary ?? fallback`, [fallback]'s keys still show
+/// through when [primary] is present but doesn't set them itself (e.g. a
+/// `tooltip.y` map that only carries an unrelated `title.formatter`,
+/// leaving `decimals` to `yaxis.labels`).
+Map<String, dynamic>? _mergePreferFirst(
+  Map<String, dynamic>? primary,
+  Map<String, dynamic>? fallback,
+) {
+  if (primary == null) return fallback;
+  if (fallback == null) return primary;
+  return {...fallback, ...primary};
+}
+
 /// A value formatter: prefix/suffix wrapping plus fixed decimal places,
 /// covering the common `tooltip.y.formatter` / `yaxis.labels.formatter` cases
 /// (currency, %, units) without requiring a Dart callback in JSON.
@@ -430,11 +444,46 @@ class ApexValueFormat {
 
   static ApexValueFormat parse(Map<String, dynamic>? json) {
     if (json == null) return const ApexValueFormat();
+    String prefix = json['prefix'] as String? ?? '';
+    String suffix = json['suffix'] as String? ?? '';
+    // AI-authored configs routinely send a `formatter` JS function string
+    // instead of `{prefix, suffix}` (e.g. "function(val) { return val + 'h';
+    // }") — this engine can't eval JS, but that exact shape (a literal
+    // string concatenated with `val`) is common enough to be worth
+    // recognizing safely. Anything more complex is left unparsed rather
+    // than guessed at.
+    if (prefix.isEmpty && suffix.isEmpty && json['formatter'] is String) {
+      final extracted = _extractConcatLiteral(json['formatter'] as String);
+      if (extracted != null) {
+        prefix = extracted.prefix;
+        suffix = extracted.suffix;
+      }
+    }
     return ApexValueFormat(
-      prefix: json['prefix'] as String? ?? '',
-      suffix: json['suffix'] as String? ?? '',
+      prefix: prefix,
+      suffix: suffix,
       decimals: (json['decimals'] as num?)?.toInt(),
     );
+  }
+
+  static final RegExp _suffixPattern =
+      RegExp(r'''val\s*\+\s*['"`]([^'"`]*)['"`]''');
+  static final RegExp _prefixPattern =
+      RegExp(r'''['"`]([^'"`]*)['"`]\s*\+\s*val''');
+
+  /// Recognizes `val + 'X'` (suffix) or `'X' + val` (prefix) inside a JS
+  /// formatter function body. Returns null for anything else — never a
+  /// partial/best-effort guess on unrecognized shapes.
+  static ({String prefix, String suffix})? _extractConcatLiteral(String js) {
+    final suffixMatch = _suffixPattern.firstMatch(js);
+    if (suffixMatch != null) {
+      return (prefix: '', suffix: suffixMatch.group(1)!);
+    }
+    final prefixMatch = _prefixPattern.firstMatch(js);
+    if (prefixMatch != null) {
+      return (prefix: prefixMatch.group(1)!, suffix: '');
+    }
+    return null;
   }
 }
 
@@ -649,6 +698,7 @@ class ApexOptions {
     this.categories = const [],
     this.xAxisType = ApexXAxisType.category,
     this.dataLabelsEnabled = false,
+    this.dataLabelsMinAngleToShowLabel = 10,
     this.legend = const ApexLegend(),
     this.bar = const ApexBarOptions(),
     this.pie = const ApexPieOptions(),
@@ -662,6 +712,7 @@ class ApexOptions {
     this.stacked = false,
     this.markers = const ApexMarkers(size: 0),
     this.yFormat = const ApexValueFormat(),
+    this.xLabelFormat = const ApexValueFormat(),
     this.xTitle = const ApexAxisTitle(),
     this.yTitle = const ApexAxisTitle(),
     this.zoom = const ApexZoom(),
@@ -687,6 +738,11 @@ class ApexOptions {
 
   /// Formatter applied to y-values in tooltips, data labels and y-axis labels.
   final ApexValueFormat yFormat;
+
+  /// Formatter applied to numeric x-values in axis labels and tooltip
+  /// titles (`tooltip.x.formatter` / `xaxis.labels.formatter`). No effect on
+  /// category or datetime axes — those already have their own label source.
+  final ApexValueFormat xLabelFormat;
 
   /// Axis titles.
   final ApexAxisTitle xTitle;
@@ -743,6 +799,17 @@ class ApexOptions {
   final List<String> categories;
   final ApexXAxisType xAxisType;
   final bool dataLabelsEnabled;
+
+  /// `dataLabels.minAngleToShowLabel` — a pie/donut slice narrower than this
+  /// many degrees has its percentage label skipped entirely. Real ApexCharts
+  /// exposes this same option for the same reason: two adjacent thin slices
+  /// (e.g. two sub-1% categories) place their labels close enough along the
+  /// arc to visually overlap, which is worse than showing no label. Default
+  /// of 10° is this port's own choice (not verified against upstream's
+  /// default, which this repo has no way to check offline) — it hides
+  /// anything under ~2.8% of the total while leaving normal-sized slices
+  /// untouched.
+  final num dataLabelsMinAngleToShowLabel;
   final ApexLegend legend;
   final ApexBarOptions bar;
   final ApexPieOptions pie;
@@ -782,6 +849,8 @@ class ApexOptions {
     final dataLabels = json['dataLabels'] as Map<String, dynamic>?;
     final dataLabelsEnabled = dataLabels?['enabled'] as bool? ??
         (type.isRadial); // ApexCharts defaults dataLabels on for pies.
+    final dataLabelsMinAngleToShowLabel =
+        (dataLabels?['minAngleToShowLabel'] as num?) ?? 10;
 
     final plotOptions = json['plotOptions'] as Map<String, dynamic>?;
     final bar = ApexBarOptions.parse(
@@ -811,7 +880,13 @@ class ApexOptions {
     final markers =
         ApexMarkers.parse(json['markers'] as Map<String, dynamic>?, type);
 
-    // y-value formatter: prefer tooltip.y, fall back to yaxis.labels.
+    // y-value formatter: prefer tooltip.y, fall back to yaxis.labels — field
+    // by field, not "whichever map exists first". An AI-authored config
+    // routinely sends a `tooltip.y` map that carries nothing formatting-
+    // related (e.g. only `title.formatter`), while the actual `decimals`/
+    // `prefix`/`suffix` it wants live on `yaxis.labels` — a plain `??` on
+    // the whole map treats tooltip.y's mere presence as blocking that
+    // fallback entirely, silently dropping fields tooltip.y never set.
     final tooltip = json['tooltip'] as Map<String, dynamic>?;
     final yaxisList = json['yaxis'];
     final yaxisMap = yaxisList is List
@@ -820,8 +895,18 @@ class ApexOptions {
             : null)
         : yaxisList as Map<String, dynamic>?;
     final yFormat = ApexValueFormat.parse(
-      (tooltip?['y'] as Map<String, dynamic>?) ??
-          (yaxisMap?['labels'] as Map<String, dynamic>?),
+      _mergePreferFirst(
+        tooltip?['y'] as Map<String, dynamic>?,
+        yaxisMap?['labels'] as Map<String, dynamic>?,
+      ),
+    );
+    // x-value formatter (numeric axis only): prefer tooltip.x, fall back to
+    // xaxis.labels — same field-by-field precedence as yFormat above.
+    final xLabelFormat = ApexValueFormat.parse(
+      _mergePreferFirst(
+        tooltip?['x'] as Map<String, dynamic>?,
+        xaxis?['labels'] as Map<String, dynamic>?,
+      ),
     );
 
     final xTitle = ApexAxisTitle.parse(xaxis);
@@ -863,6 +948,7 @@ class ApexOptions {
         labels: labels,
         colors: colors,
         dataLabelsEnabled: dataLabelsEnabled,
+        dataLabelsMinAngleToShowLabel: dataLabelsMinAngleToShowLabel,
         legend: legend,
         pie: pie,
         radialBar: radialBar,
@@ -886,6 +972,7 @@ class ApexOptions {
       categories: categories,
       xAxisType: xAxisType,
       dataLabelsEnabled: dataLabelsEnabled,
+      dataLabelsMinAngleToShowLabel: dataLabelsMinAngleToShowLabel,
       legend: legend,
       bar: bar,
       pie: pie,
@@ -897,6 +984,7 @@ class ApexOptions {
       stacked: stacked,
       markers: markers,
       yFormat: yFormat,
+      xLabelFormat: xLabelFormat,
       xTitle: xTitle,
       yTitle: yTitle,
       zoom: zoom,
@@ -930,6 +1018,7 @@ class ApexOptions {
       categories: categories,
       xAxisType: xAxisType,
       dataLabelsEnabled: dataLabelsEnabled,
+      dataLabelsMinAngleToShowLabel: dataLabelsMinAngleToShowLabel,
       legend: legend,
       bar: bar,
       pie: pie,
@@ -941,6 +1030,7 @@ class ApexOptions {
       stacked: stacked,
       markers: markers,
       yFormat: yFormat,
+      xLabelFormat: xLabelFormat,
       xTitle: xTitle,
       yTitle: yTitle,
       zoom: zoom,

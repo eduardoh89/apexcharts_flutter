@@ -84,6 +84,9 @@ class CartesianLayout {
     required this.xViewMax,
     this.logarithmic = false,
     this.logBase = 10,
+    this.xLabelsRotated = false,
+    this.xLabelStep = 1,
+    this.xLabelsExtraGutter = 0,
   });
 
   /// Whether the value axis is logarithmic (`yaxis.logarithmic`).
@@ -91,6 +94,24 @@ class CartesianLayout {
 
   /// Logarithm base for a logarithmic value axis.
   final double logBase;
+
+  /// Whether category x-axis labels are rotated -45° because they don't fit
+  /// horizontally — decided once here (see [resolveCategoryLabels]) and
+  /// reused by GridRenderer, so the layout (bottom gutter) and the drawing
+  /// never disagree about it. Always `false` for datetime/numeric axes.
+  final bool xLabelsRotated;
+
+  /// When even rotating isn't enough to fit every category label without
+  /// overlapping its neighbor, only every Nth label is drawn (1 = all of
+  /// them). Same rationale as [xLabelsRotated].
+  final int xLabelStep;
+
+  /// Extra vertical room (beyond the flat single-line case) reserved below
+  /// [plotRect] for rotated category labels — 0 when [xLabelsRotated] is
+  /// false. The x-axis title must add this to its own offset from
+  /// plotRect.bottom, or it sits where the rotated labels now reach instead
+  /// of below them.
+  final double xLabelsExtraGutter;
 
   /// Full x-domain extent in domain units (index for category/numeric, epoch
   /// ms for datetime). Zoom/pan windows are expressed against this.
@@ -275,11 +296,34 @@ class CartesianLayout {
     final double yTitlePad = options.yTitle.hasText ? 18 : 0;
     final double xTitlePad = options.xTitle.hasText ? 18 : 0;
 
+    // Category label rotation/thinning needs the plot WIDTH to decide — the
+    // bottom gutter itself doesn't affect width, so this can run before the
+    // bottom edge (which the rotation decision itself feeds into) is final.
+    final double provisionalPlotWidth = math.max(
+      size.width -
+          (leftGutter + legendLeft + yTitlePad) -
+          _rightPadding -
+          legendRight,
+      1,
+    );
+    final bool isCategoryAxis =
+        options.xAxisType == ApexXAxisType.category && !rangeAxis;
+    final categoryLabels = isCategoryAxis
+        ? resolveCategoryLabels(
+            categories: options.categories,
+            pointCount: maxPoints,
+            plotWidth: provisionalPlotWidth,
+            labeller: labeller,
+          )
+        : const (rotate: false, step: 1, extraBottomGutter: 0.0);
+
+    final double bottomGutter = _bottomGutter + categoryLabels.extraBottomGutter;
+
     final plotRect = Rect.fromLTRB(
       leftGutter + legendLeft + yTitlePad,
       _topPadding + legendTop,
       size.width - _rightPadding - legendRight,
-      size.height - _bottomGutter - legendBottom - xTitlePad,
+      size.height - bottomGutter - legendBottom - xTitlePad,
     );
 
     return CartesianLayout._(
@@ -289,6 +333,9 @@ class CartesianLayout {
       yMax: resolvedYMax,
       pointCount: maxPoints,
       xCategories: options.categories,
+      xLabelsRotated: categoryLabels.rotate,
+      xLabelStep: categoryLabels.step,
+      xLabelsExtraGutter: categoryLabels.extraBottomGutter,
       xAxisType: options.xAxisType,
       xNumericMin: domainMin,
       xNumericMax: domainMax,
@@ -343,6 +390,9 @@ class CartesianLayout {
       xViewMax: mix(a.xViewMax, b.xViewMax),
       logarithmic: b.logarithmic,
       logBase: b.logBase,
+      xLabelsRotated: b.xLabelsRotated,
+      xLabelStep: b.xLabelStep,
+      xLabelsExtraGutter: b.xLabelsExtraGutter,
     );
   }
 
@@ -414,5 +464,58 @@ class CartesianLayout {
   static String _fmt(num v) {
     if (v == v.truncate()) return v.toInt().toString();
     return v.toString();
+  }
+
+  /// Decides how a category x-axis should handle its labels: rotate -45°
+  /// when they don't fit horizontally, and — when even rotating isn't
+  /// enough — skip every Nth label instead of letting them overlap their
+  /// neighbor. Pure (no canvas), so [compute] (to size the bottom gutter)
+  /// and GridRenderer (to actually draw) can share one answer instead of
+  /// each re-deriving it and risking disagreement.
+  ///
+  /// [plotWidth] must already exclude the bottom gutter's own effect on
+  /// layout (it doesn't have one — width comes only from left/right
+  /// gutters), so callers can resolve this *before* the bottom gutter
+  /// (which depends on this result) is finalized.
+  static ({bool rotate, int step, double extraBottomGutter})
+      resolveCategoryLabels({
+    required List<String> categories,
+    required int pointCount,
+    required double plotWidth,
+    required TextDrawer labeller,
+  }) {
+    if (pointCount <= 0) return (rotate: false, step: 1, extraBottomGutter: 0);
+
+    double widest = 0;
+    for (int i = 0; i < pointCount; i++) {
+      final label = i < categories.length ? categories[i] : (i + 1).toString();
+      widest = math.max(widest, labeller.measure(label).width);
+    }
+
+    final double slotWidth = plotWidth / pointCount;
+    if (widest + 4 <= slotWidth) {
+      return (rotate: false, step: 1, extraBottomGutter: 0);
+    }
+
+    // -45°: a label's rendered footprint splits evenly into a vertical drop
+    // and a horizontal reach, both equal to width * sin(45°) == width *
+    // cos(45°) (same constant, kept as two names for what each governs).
+    const double sin45 = 0.7071067811865476;
+    // Cap how much vertical room one pathological label (a 40-character
+    // name) can claim — the outer canvas clip (see ApexChart.paint) already
+    // contains anything that still doesn't fit, so this is a sanity bound,
+    // not the only thing standing between the label and the row below it.
+    const double maxExtraGutter = 70;
+    final double extraBottomGutter = math.min(widest * sin45, maxExtraGutter);
+
+    // Rotating frees up to slotWidth of BAND space, but the label's own
+    // horizontal reach might still exceed that — in which case rotating
+    // alone still lets it intrude into the neighboring slot. Thin out to
+    // however many slots that reach actually spans.
+    final double horizontalReach = widest * sin45; // cos(45°) == sin(45°)
+    final int step =
+        horizontalReach > slotWidth ? (horizontalReach / slotWidth).ceil() : 1;
+
+    return (rotate: true, step: step, extraBottomGutter: extraBottomGutter);
   }
 }

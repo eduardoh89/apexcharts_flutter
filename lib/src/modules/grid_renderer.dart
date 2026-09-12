@@ -1,8 +1,10 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import '../options/apex_options.dart';
 import '../svg/text_drawer.dart';
 import '../utils/format_value.dart';
+import '../utils/range.dart';
 import 'cartesian_layout.dart';
 import 'time_scale.dart';
 
@@ -146,10 +148,20 @@ class GridRenderer {
     );
 
     if (options.xTitle.hasText) {
+      // 26px below plotRect.bottom is only enough clearance for the flat,
+      // single-line case. plotRect.bottom moving up makes ROOM for rotated
+      // labels, but doesn't by itself keep the title below them — the title
+      // needs its own offset to grow by the same amount
+      // (xLabelsExtraGutter), or a long rotated label (which can reach
+      // 70px down, not the old 34px) still reaches exactly where a flat
+      // +26 puts this title.
       titleDrawer.draw(
         canvas,
         options.xTitle.text!,
-        Offset(layout.plotRect.center.dx, layout.plotRect.bottom + 26),
+        Offset(
+          layout.plotRect.center.dx,
+          layout.plotRect.bottom + 26 + layout.xLabelsExtraGutter,
+        ),
         anchor: TextAnchor.middle,
       );
     }
@@ -181,22 +193,20 @@ class GridRenderer {
       // point position (edge-to-edge).
       final bool banded = options.type == ApexChartType.bar;
 
-      // ApexCharts auto-rotates category labels (~-45°) when they would
-      // overlap. Estimate: if the widest label exceeds the per-slot width,
-      // rotate. The slot width is plotWidth / visible-points.
-      double widest = 0;
-      for (int i = 0; i < n; i++) {
-        final label = i < cats.length ? cats[i] : (i + 1).toString();
-        widest = widest > labeller.measure(label).width
-            ? widest
-            : labeller.measure(label).width;
-      }
-      final double slotWidth =
-          n > 0 ? layout.plotRect.width / n : layout.plotRect.width;
-      final bool rotate = widest + 4 > slotWidth;
+      // Rotation and label-thinning are decided once in CartesianLayout
+      // (resolveCategoryLabels), which also sizes the bottom gutter around
+      // the same answer — recomputing it here could disagree with how much
+      // room was actually reserved.
+      final bool rotate = layout.xLabelsRotated;
+      final int step = layout.xLabelStep;
       const double rotation = -0.7853981633974483; // -45°
 
       for (int i = 0; i < n; i++) {
+        // Thin out when even rotating doesn't leave enough room per label —
+        // better to show fewer, readable labels than every one overlapping
+        // its neighbor (same trade-off ApexCharts/Highcharts make on dense
+        // category axes).
+        if (i % step != 0) continue;
         final label = i < cats.length ? cats[i] : (i + 1).toString();
         final x = banded ? layout.xBandCenter(i) : layout.xCategoryToPixel(i);
         // When zoomed, categories outside the visible window map outside the
@@ -245,20 +255,48 @@ class GridRenderer {
         );
       }
     } else {
-      // numeric: a handful of evenly spaced ticks across the visible window.
-      const desired = 6;
-      for (int i = 0; i <= desired; i++) {
-        final t = i / desired;
-        final value = layout.xViewMin + t * (layout.xViewMax - layout.xViewMin);
-        final x = layout.plotRect.left + t * layout.plotRect.width;
+      // numeric: "nice" round-number ticks (same algorithm the y-axis
+      // already uses), instead of naive evenly-spaced fractions of the raw
+      // data range — an axis spanning 0..23 used to print "3.83, 7.67,
+      // 11.50..." instead of "0, 5, 10, 15, 20". Ticks that fall outside the
+      // actual view (nice bounds can slightly overshoot the raw data) are
+      // clipped below, same as the datetime tick loop.
+      final ticks = numericXTicks(
+        xMin: layout.xViewMin,
+        xMax: layout.xViewMax,
+        plotWidth: layout.plotRect.width,
+        tickAmount: options.tickAmount,
+      );
+      for (final tick in ticks) {
+        final x = layout.xValueToPixel(tick.toDouble());
+        if (x < layout.plotRect.left - 1 || x > layout.plotRect.right + 1) {
+          continue;
+        }
         labeller.draw(
           canvas,
-          _fmtNum(value),
+          FormatValue.formatted(tick, options.xLabelFormat),
           Offset(x, labelY),
           anchor: TextAnchor.middle,
         );
       }
     }
+  }
+
+  /// "Nice" round-number tick values for a numeric x-axis spanning
+  /// [xMin]..[xMax] — pure (no Canvas), so it's directly testable. Mirrors
+  /// the y-axis's own `NiceScale.niceScale` call in `CartesianLayout`.
+  /// Honors an explicit [tickAmount] (`xaxis.tickAmount`) as the upper bound
+  /// fed into the nice-scale algorithm; otherwise derives one from
+  /// [plotWidth] the same way the y-axis derives its bound from height.
+  static List<num> numericXTicks({
+    required double xMin,
+    required double xMax,
+    required double plotWidth,
+    int? tickAmount,
+  }) {
+    final double autoMaxTicks = math.max((plotWidth - 40) / 70, 2);
+    final double maxTicks = tickAmount?.toDouble() ?? autoMaxTicks;
+    return NiceScale.niceScale(xMin, xMax, maxTicks: maxTicks).result;
   }
 
   static String _fmtNum(num v) {

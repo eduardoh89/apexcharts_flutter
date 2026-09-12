@@ -464,6 +464,26 @@ class GalleryPage extends StatelessWidget {
           'legend': {'position': 'right'},
           'dataLabels': {'enabled': true},
         }),
+        ChartSpec('Donut (tiny slices)', {
+          // Reproduces a reported real-world bug: several sub-1% categories
+          // placed their percentage labels close enough along the arc to
+          // overlap illegibly. dataLabels.minAngleToShowLabel (default 10°)
+          // hides the label for any slice too narrow to show one cleanly —
+          // compare against the plain 'Donut' spec above, which has no
+          // slice under 10° and so shows every label as before.
+          'chart': {'type': 'donut'},
+          'colors': ['#0F5B5B', '#0E9394', '#8BC34A', '#0F5B5B', '#C6E070'],
+          'series': [561, 433, 5, 1, 1],
+          'labels': [
+            'Payment',
+            'Out in Service Time',
+            'Manual Pay',
+            'Repayment',
+            'Payment Cancel',
+          ],
+          'legend': {'position': 'bottom'},
+          'dataLabels': {'enabled': true},
+        }),
       ];
 
   @override

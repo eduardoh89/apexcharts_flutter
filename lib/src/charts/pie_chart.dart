@@ -20,6 +20,29 @@ class PieChartRenderer {
   /// White separator stroke between slices (ApexCharts default strokeWidth: 2).
   static const double _strokeWidth = 2;
 
+  /// Sweep angle (degrees) for each pie/donut slice, in series order — pure,
+  /// no canvas needed. Negative values clamp to 0, matching [paint]'s own
+  /// slice geometry so this always reflects what actually gets drawn.
+  static List<double> sliceSweepDegrees(List<double> values) {
+    double total = 0;
+    for (final v in values) {
+      total += v < 0 ? 0 : v;
+    }
+    if (total == 0) total = 0.00001;
+    return values
+        .map((v) => 360 * (v < 0 ? 0 : v) / total)
+        .toList(growable: false);
+  }
+
+  /// Which slices are wide enough to draw a data label without it colliding
+  /// with a neighbor's — pure, same order as [values]. See
+  /// [ApexOptions.dataLabelsMinAngleToShowLabel].
+  static List<bool> labelsToShow(List<double> values, num minAngleDegrees) {
+    return sliceSweepDegrees(values)
+        .map((deg) => deg >= minAngleDegrees)
+        .toList(growable: false);
+  }
+
   static void paint(Canvas canvas, Size size, ApexOptions options) {
     final values = options.pieSeries;
     if (values.isEmpty) return;
@@ -32,9 +55,9 @@ class PieChartRenderer {
     } else if (pos == ApexLegendPosition.left) {
       left = LegendRenderer.reservedWidth(options);
     } else if (pos == ApexLegendPosition.bottom) {
-      bottom = 26;
+      bottom = LegendRenderer.reservedHeight(options, size.width);
     } else if (pos == ApexLegendPosition.top) {
-      top = 26;
+      top = LegendRenderer.reservedHeight(options, size.width);
     }
 
     final area =
@@ -133,22 +156,31 @@ class PieChartRenderer {
       fontFamily: options.fontFamily,
     );
 
+    // A slice too narrow for its label not to collide with a neighbor's
+    // (two sub-1% categories next to each other, say) skips the label
+    // entirely rather than drawing illegible overlapping text — see
+    // ApexOptions.dataLabelsMinAngleToShowLabel.
+    final showLabel =
+        labelsToShow(values, options.dataLabelsMinAngleToShowLabel);
+
     double startRad = -math.pi / 2;
     for (int i = 0; i < values.length; i++) {
       final v = values[i] < 0 ? 0.0 : values[i];
       final sweep = 2 * math.pi * (v / total);
-      final mid = startRad + sweep / 2;
-      final pct = (v / total) * 100;
-      final label = '${pct.toStringAsFixed(1)}%';
-      final lx = center.dx + labelRadius * math.cos(mid);
-      final ly = center.dy + labelRadius * math.sin(mid);
-      labeller.draw(
-        canvas,
-        label,
-        Offset(lx, ly),
-        anchor: TextAnchor.middle,
-        verticalCenter: true,
-      );
+      if (showLabel[i]) {
+        final mid = startRad + sweep / 2;
+        final pct = (v / total) * 100;
+        final label = '${pct.toStringAsFixed(1)}%';
+        final lx = center.dx + labelRadius * math.cos(mid);
+        final ly = center.dy + labelRadius * math.sin(mid);
+        labeller.draw(
+          canvas,
+          label,
+          Offset(lx, ly),
+          anchor: TextAnchor.middle,
+          verticalCenter: true,
+        );
+      }
       startRad += sweep;
     }
   }

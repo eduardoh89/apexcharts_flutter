@@ -7,25 +7,61 @@ class FormatValue {
 
   /// ApexCharts' default: whole numbers print without decimals; otherwise the
   /// value is shown with up to [maxDecimals] significant decimals, trailing
-  /// zeros trimmed. Thousands are not grouped by default.
-  static String number(num value, {int maxDecimals = 3}) {
+  /// zeros trimmed.
+  ///
+  /// **REVIA deviations from upstream:**
+  /// - Real ApexCharts does not group thousands by default (axis
+  ///   labels/tooltips print "8000000" verbatim) — confirmed reported as
+  ///   hard to read on real dashboards. Every value through here gets
+  ///   Chilean/Spanish-style grouping instead: `.` every 3 digits in the
+  ///   integer part, `,` as the decimal separator (e.g. `740100` →
+  ///   `740.100`, `1.2` stays `1,2`).
+  /// - [maxDecimals] defaults to 1, not 3: an unrounded average (e.g.
+  ///   `4988.822`) read as noisy false precision on a real dashboard. A
+  ///   chart that explicitly configures `decimals` (via `ApexValueFormat`)
+  ///   still gets exactly that instead of this default.
+  static String number(num value, {int maxDecimals = 1}) {
+    String s;
     if (value == value.truncate()) {
-      return value.toInt().toString();
+      s = value.toInt().toString();
+    } else {
+      s = value.toStringAsFixed(maxDecimals);
+      // Trim trailing zeros and a dangling decimal point.
+      if (s.contains('.')) {
+        s = s.replaceAll(RegExp(r'0+$'), '');
+        s = s.replaceAll(RegExp(r'\.$'), '');
+      }
     }
-    var s = value.toStringAsFixed(maxDecimals);
-    // Trim trailing zeros and a dangling decimal point.
-    if (s.contains('.')) {
-      s = s.replaceAll(RegExp(r'0+$'), '');
-      s = s.replaceAll(RegExp(r'\.$'), '');
+    return _groupThousands(s);
+  }
+
+  /// Inserts `.` every 3 digits in the integer part of [s] (a plain
+  /// `-?\d+(\.\d+)?` string, e.g. from `toString`/`toStringAsFixed`) and
+  /// swaps its `.` decimal separator for `,` — Chilean/Spanish convention.
+  static String _groupThousands(String s) {
+    final bool negative = s.startsWith('-');
+    final unsigned = negative ? s.substring(1) : s;
+    final dotIndex = unsigned.indexOf('.');
+    final String intPart =
+        dotIndex == -1 ? unsigned : unsigned.substring(0, dotIndex);
+    final String? decPart =
+        dotIndex == -1 ? null : unsigned.substring(dotIndex + 1);
+
+    final buffer = StringBuffer();
+    final len = intPart.length;
+    for (int i = 0; i < len; i++) {
+      if (i > 0 && (len - i) % 3 == 0) buffer.write('.');
+      buffer.write(intPart[i]);
     }
-    return s;
+    final grouped = decPart == null ? buffer.toString() : '$buffer,$decPart';
+    return negative ? '-$grouped' : grouped;
   }
 
   /// Apply an [ApexValueFormat] (prefix/suffix/decimals) to a value, matching
   /// the common `tooltip.y.formatter` use cases (currency, %, units).
   static String formatted(num value, ApexValueFormat fmt) {
     final String core = fmt.decimals != null
-        ? value.toStringAsFixed(fmt.decimals!)
+        ? _groupThousands(value.toStringAsFixed(fmt.decimals!))
         : number(value);
     return '${fmt.prefix}$core${fmt.suffix}';
   }
