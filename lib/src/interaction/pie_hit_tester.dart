@@ -26,9 +26,9 @@ class PieHitTester {
     } else if (pos == ApexLegendPosition.left) {
       left = LegendRenderer.reservedWidth(options);
     } else if (pos == ApexLegendPosition.bottom) {
-      bottom = 26;
+      bottom = LegendRenderer.reservedHeight(options, size.width);
     } else if (pos == ApexLegendPosition.top) {
-      top = 26;
+      top = LegendRenderer.reservedHeight(options, size.width);
     }
 
     final area =

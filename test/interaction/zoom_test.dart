@@ -1,6 +1,6 @@
-import 'dart:ui';
-
 import 'package:apexcharts_flutter/apexcharts_flutter.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -198,5 +198,140 @@ void main() {
       });
       expect(o.zoom.enabled, isTrue);
     });
+  });
+
+  group('mouse wheel over a zoomable chart', () {
+    // Reproduces a reported bug: scrolling the mouse wheel while hovering a
+    // chart embedded in a scrollable dashboard zoomed the chart AND scrolled
+    // the page underneath it at the same time. ApexChart's Listener now
+    // claims the PointerScrollEvent via GestureBinding's shared resolver
+    // instead of handling it directly — only the first registrant (the
+    // chart, being hit-tested before its ancestor Scrollable) should run.
+    testWidgets(
+      'zooms the chart and leaves an ancestor Scrollable untouched',
+      (tester) async {
+        final scrollController = ScrollController();
+        addTearDown(scrollController.dispose);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                controller: scrollController,
+                child: Column(
+                  children: [
+                    SizedBox(
+                      width: 480,
+                      height: 320,
+                      child: ApexChart(options: options),
+                    ),
+                    // Enough extra height to make the page itself scrollable.
+                    const SizedBox(height: 2000),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 1200));
+
+        expect(scrollController.offset, 0);
+        final chartCenter = tester.getCenter(find.byType(ApexChart));
+
+        await tester.sendEventToBinding(
+          PointerScrollEvent(
+            position: chartCenter,
+            scrollDelta: const Offset(0, 300),
+          ),
+        );
+        await tester.pump();
+
+        // The chart claimed the signal — the page must not have moved.
+        expect(scrollController.offset, 0);
+      },
+    );
+
+    // Reproduces a second, worse regression the fix above introduced: the
+    // Listener wrapped EVERY chart type unconditionally, so a pie/bar/radar/
+    // heatmap chart — anything without zoom — still won the resolver claim
+    // and then no-op'd inside _onWheel, silently swallowing the scroll
+    // instead of either zooming OR letting the page scroll. Only a chart
+    // that can actually use the wheel should ever intercept it.
+    Future<void> expectPageScrollsNormally(
+      WidgetTester tester,
+      ApexOptions chartOptions,
+    ) async {
+      final scrollController = ScrollController();
+      addTearDown(scrollController.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              controller: scrollController,
+              child: Column(
+                children: [
+                  SizedBox(
+                    width: 480,
+                    height: 320,
+                    child: ApexChart(options: chartOptions),
+                  ),
+                  const SizedBox(height: 2000),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 1200));
+
+      expect(scrollController.offset, 0);
+      final chartCenter = tester.getCenter(find.byType(ApexChart));
+
+      await tester.sendEventToBinding(
+        PointerScrollEvent(
+          position: chartCenter,
+          scrollDelta: const Offset(0, 300),
+        ),
+      );
+      await tester.pump();
+
+      // Nothing claimed the signal — the ancestor Scrollable must have moved.
+      expect(scrollController.offset, 300);
+    }
+
+    testWidgets(
+      'lets the page scroll normally over a non-cartesian chart (pie)',
+      (tester) async {
+        final pieOptions = ApexOptions.fromJson({
+          'chart': {'type': 'pie'},
+          'series': [44, 55, 13],
+          'labels': ['A', 'B', 'C'],
+        });
+        await expectPageScrollsNormally(tester, pieOptions);
+      },
+    );
+
+    testWidgets(
+      'lets the page scroll normally over a cartesian chart with zoom disabled (bar)',
+      (tester) async {
+        final barOptions = ApexOptions.fromJson({
+          'chart': {
+            'type': 'bar',
+            'zoom': {'enabled': false},
+          },
+          'series': [
+            {
+              'name': 'A',
+              'data': [1, 2, 3],
+            },
+          ],
+          'xaxis': {
+            'categories': [0, 1, 2],
+          },
+        });
+        await expectPageScrollsNormally(tester, barOptions);
+      },
+    );
   });
 }
