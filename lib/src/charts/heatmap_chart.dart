@@ -17,7 +17,13 @@ import '../utils/apex_color.dart';
 ///   * colorShadePercent = 1 - percent/100
 ///   * color = shadeColor(colorShadePercent, paletteColor[rowIndex])
 ///     (positive shade lightens toward white) at `fill.opacity` (default 1).
-/// So high values stay near the full palette color; low values fade to white.
+/// So high values stay near the full palette color; low values fade toward
+/// white — **deliberate REVIA deviation from upstream here**: real
+/// ApexCharts (`Helpers.js` `getShadeColor`) never applies `shadeIntensity`
+/// in this non-negative branch, so a low-but-real value can fade all the way
+/// to pure white — visually identical to an empty/no-data cell. We scale
+/// `colorShadePercent` by `shadeIntensity` here too (see `_shadeFor`) so
+/// every cell with actual data keeps a visible tint.
 /// A single laid-out heatmap cell, shared by the renderer and the hit-tester.
 class HeatMapCell {
   const HeatMapCell({
@@ -211,7 +217,10 @@ class HeatMapChartRenderer {
     }
   }
 
-  /// Cell shade (non-negative default path of `getShadeColor`).
+  /// Cell shade (non-negative default path of `getShadeColor`, with a REVIA
+  /// deviation — see the class doc comment: `shadeIntensity` caps the
+  /// maximum lightness here too, so a low-but-real value never fades all
+  /// the way to the pure white a truly empty cell would show.
   static Color _shadeFor(
     Color base,
     double percent,
@@ -226,7 +235,7 @@ class HeatMapChartRenderer {
         colorShadePercent = (1 - percent / 100) * shadeIntensity;
       }
     } else {
-      colorShadePercent = 1 - percent / 100;
+      colorShadePercent = (1 - percent / 100) * shadeIntensity;
     }
     // shadeColor: positive lightens toward white (light theme default).
     return ApexColor.shade(base, colorShadePercent);
