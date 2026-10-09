@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.3 (unreleased)
+
+- Fix horizontal bar data labels being clipped at the plot's right edge
+  (e.g. "40" rendered as "4" when a bar spans the full axis). A label that
+  doesn't fit past the bar end is now drawn inside the bar end (with a
+  contrast-aware color), or pinned to the plot edge for very short bars.
+  New pure helper `DataLabelsRenderer.horizontalLabelPlacement`.
+
 ## 0.1.2
 
 - Performance: hovering a dense chart no longer repaints the whole chart. The

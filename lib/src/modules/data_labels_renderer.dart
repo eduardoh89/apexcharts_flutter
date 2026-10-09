@@ -163,6 +163,8 @@ class DataLabelsRenderer {
       return layout.plotRect.left + t * layout.plotRect.width;
     }
 
+    final double baseX = valueToX(0);
+
     for (int j = 0; j < layout.pointCount; j++) {
       final double bandTop = layout.plotRect.top + j * yDivision;
       final double barH =
@@ -173,15 +175,74 @@ class DataLabelsRenderer {
         if (j >= s.points.length) continue;
         final v = s.points[j].y;
         final cy = bandTop + groupPad + i * barH + barH / 2;
-        final endX = valueToX(v) + (v >= 0 ? 6 : -6);
-        labeller.draw(
+        final text = FormatValue.formatted(v, options.yFormat);
+        final placement = horizontalLabelPlacement(
+          barStart: baseX,
+          barEnd: valueToX(v),
+          plotLeft: layout.plotRect.left,
+          plotRight: layout.plotRect.right,
+          textWidth: labeller.measure(text).width,
+        );
+        final drawer = placement.inside
+            ? TextDrawer(
+                color: _contrastOn(
+                  s.color ?? options.colors[i % options.colors.length],
+                ),
+                fontSize: labeller.fontSize,
+                fontWeight: labeller.fontWeight,
+                fontFamily: labeller.fontFamily,
+              )
+            : labeller;
+        drawer.draw(
           canvas,
-          FormatValue.formatted(v, options.yFormat),
-          Offset(endX, cy),
-          anchor: v >= 0 ? TextAnchor.start : TextAnchor.end,
+          text,
+          Offset(placement.x, cy),
+          anchor: placement.anchor,
           verticalCenter: true,
         );
       }
     }
   }
+
+  /// Where a horizontal bar's data label goes. ApexCharts draws it just past
+  /// the bar end, but the plot only leaves a 12px right gutter, so a bar that
+  /// reaches (or nearly reaches) the edge pushed its label off the canvas —
+  /// e.g. "40 cupos" on a 0..40 axis rendered as just "4". When the label
+  /// doesn't fit outside it goes inside the bar end instead; if the bar is
+  /// too short for that too, it is pinned to the plot edge. Pure, so the rule
+  /// is testable without a canvas.
+  static ({double x, TextAnchor anchor, bool inside}) horizontalLabelPlacement({
+    required double barStart,
+    required double barEnd,
+    required double plotLeft,
+    required double plotRight,
+    required double textWidth,
+  }) {
+    const double gap = 6;
+    final bool positive = barEnd >= barStart;
+    final double barLength = (barEnd - barStart).abs();
+
+    if (positive) {
+      if (barEnd + gap + textWidth <= plotRight) {
+        return (x: barEnd + gap, anchor: TextAnchor.start, inside: false);
+      }
+      if (barLength >= textWidth + gap * 2) {
+        return (x: barEnd - gap, anchor: TextAnchor.end, inside: true);
+      }
+      return (x: plotRight, anchor: TextAnchor.end, inside: true);
+    }
+
+    if (barEnd - gap - textWidth >= plotLeft) {
+      return (x: barEnd - gap, anchor: TextAnchor.end, inside: false);
+    }
+    if (barLength >= textWidth + gap * 2) {
+      return (x: barEnd + gap, anchor: TextAnchor.start, inside: true);
+    }
+    return (x: plotLeft, anchor: TextAnchor.start, inside: true);
+  }
+
+  /// Label color readable on top of a bar filled with [fill]: the regular
+  /// dark label color on light fills, white on dark ones.
+  static Color _contrastOn(Color fill) =>
+      fill.computeLuminance() > 0.4 ? _labelColor : const Color(0xFFFFFFFF);
 }
